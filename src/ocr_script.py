@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import PdfPipelineOptions
@@ -18,15 +19,22 @@ def pdf_convert(pdf_string):
 
     result = converter.convert(pdf_string)
 
-    print("writing md")
+    print("writing ocr output")
     output_dir = Path("../gha_texts")
     output_dir.mkdir(parents=True, exist_ok=True)
     doc_filename = result.input.file.stem
-    with (output_dir / f"{doc_filename}.md").open("w", encoding="utf-8") as fp:
-        fp.write(result.document.export_to_markdown())
+
+    # markdown version
+    # with (output_dir / f"{doc_filename}.md").open("w", encoding="utf-8") as fp:
+    #     fp.write(result.document.export_to_markdown())
+
+    # json version
+    out_path = output_dir / f"{doc_filename}.json"
+    with out_path.open("w", encoding="utf-8") as fp:
+        fp.write(json.dumps(result.document.export_to_dict()))
 
 
 if __name__ == '__main__':
     # pdf_convert("../Angela Suhas Project Proposal.pdf")
-    # pdf_convert("../gha/Africa7.pdf")
-    pdf_convert("../gha/Africa6.pdf")
+    # pdf_convert("../gha_raw_pdf/Africa7.pdf")
+    pdf_convert("../gha_raw_pdf/Africa6.pdf")
