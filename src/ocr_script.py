@@ -1,8 +1,11 @@
-import json
 from pathlib import Path
+
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import PdfPipelineOptions
 from docling.document_converter import DocumentConverter, PdfFormatOption
+
+import json
+import os
 
 
 def pdf_convert(pdf_string):
@@ -19,8 +22,7 @@ def pdf_convert(pdf_string):
 
     result = converter.convert(pdf_string)
 
-    print("writing ocr output")
-    output_dir = Path("../gha_texts")
+    output_dir = Path("../gha_texts/chapters")
     output_dir.mkdir(parents=True, exist_ok=True)
     doc_filename = result.input.file.stem
 
@@ -30,6 +32,7 @@ def pdf_convert(pdf_string):
 
     # json version
     out_path = output_dir / f"{doc_filename}.json"
+    print("writing ocr output", str(out_path))
     with out_path.open("w", encoding="utf-8") as fp:
         fp.write(json.dumps(result.document.export_to_dict()))
 
@@ -37,4 +40,11 @@ def pdf_convert(pdf_string):
 if __name__ == '__main__':
     # pdf_convert("../Angela Suhas Project Proposal.pdf")
     # pdf_convert("../gha_raw_pdf/Africa7.pdf")
-    pdf_convert("../gha_raw_pdf/Africa6.pdf")
+
+    path = "../gha_raw_pdf/chapters"
+    for filename in os.listdir(path):
+        if filename.split('.')[-1] != "pdf":
+            continue
+        file_path = os.path.join(path, filename)
+        print("converting ", str(file_path))
+        pdf_convert(str(file_path))
