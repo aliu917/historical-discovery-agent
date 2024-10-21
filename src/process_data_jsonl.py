@@ -70,18 +70,22 @@ Some notes from observing the jsons:
 
 """
 from collections import OrderedDict
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from pathlib import Path
 
 import json
 import os
 import re
+import tiktoken
 
 
 class ResultObject:
-    def __init__(self):
+    def __init__(self, id):
         self.full_section_list = []
         self.final_jsonl = []
         self.curr_title = ""
+        self.curr_text = ""
+        self.curr_idx = id
 
 
 def create_full_sections(full_section_list):
@@ -159,8 +163,8 @@ def is_next_continuing_text(text):
     return not text[0].isupper()
 
 
-def collect_fields(json_file):
-    result = ResultObject()
+def collect_fields(json_file, id):
+    result = ResultObject(id)
     with open (json_file, 'r') as file:
         data = json.load(file)
         all_text = data["texts"]
@@ -180,20 +184,14 @@ def collect_fields(json_file):
             if is_json_type(section_json, "text"):
 
                 if skip_footnote_text(text):
-                    new_section = False
                     continue
 
-                # Continuing text content
-                if not new_section and len(result.final_jsonl) > 0 and (is_prev_continuing_text(result.final_jsonl[-1]["content"]) or is_next_continuing_text(text)):
-                    result.final_jsonl[-1]["content"] += " " + text
-                    new_section = False
-                    continue
+                separator = "\n"
+                # Continuing paragraph text content
+                if not new_section and len(result.final_jsonl) > 0 and (is_prev_continuing_text(result.curr_text) or is_next_continuing_text(text)):
+                    separator = " "
 
-                new_jsonl = dict()
-                new_jsonl["document_title"] = result.curr_title
-                new_jsonl["content"] = text
-                new_jsonl["full_section_title"] = create_full_sections(result.full_section_list)
-                result.final_jsonl.append(new_jsonl)
+                result.curr_text += separator + text
                 new_section = False
 
             # New list item content
@@ -202,8 +200,8 @@ def collect_fields(json_file):
                     new_section = False
                     continue
 
-                if not new_section and len(result.final_jsonl) > 0 and is_prev_continuing_text(result.final_jsonl[-1]["content"]) and is_body_list_item(text):
-                    result.final_jsonl[-1]["content"] += " " + text
+                if not new_section and len(result.final_jsonl) > 0 and is_prev_continuing_text(result.curr_text) and is_body_list_item(text):
+                    result.curr_text += " " + text
                     new_section = False
                     continue
 
@@ -215,6 +213,8 @@ def collect_fields(json_file):
                     continue
 
                 new_section = True
+                create_new_section(result)
+
                 curr_section_height = result.full_section_list[-1][-1]
                 new_section_height = calculate_section_height(section_json)
 
@@ -236,13 +236,42 @@ def collect_fields(json_file):
 
                 result.full_section_list.append((text, new_section_height))
 
+        create_new_section(result)
+
     return result
+
+
+def create_new_section(result):
+
+    chunked_text = chunk_section(result.curr_text)
+    for text_chunk in chunked_text:
+        new_jsonl = dict()
+        new_jsonl["id"] = result.curr_idx
+        result.curr_idx += 1
+        new_jsonl["content"] = text_chunk
+        new_jsonl["document_title"] = result.curr_title
+        new_jsonl["full_section_title"] = create_full_sections(result.full_section_list)
+        result.final_jsonl.append(new_jsonl)
+
+    result.curr_text = ""
+
+
+def chunk_section(text):
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=500,
+        chunk_overlap=50,
+        length_function=lambda x: len(tiktoken.get_encoding("o200k_base").encode(x)),
+        is_separator_regex=False,
+    )
+    chunks = text_splitter.create_documents([text])
+    return [chunk.page_content for chunk in chunks]
 
 
 def process_data():
 
     all_results = []
 
+    id = 0
     path = "../gha_texts/chapters"
     for filename in os.listdir(path):
         if filename.split('.')[-1] != "json":
@@ -251,22 +280,25 @@ def process_data():
         print()
         print("processing ", str(file_path))
         print()
-        result = collect_fields(file_path)
+        result = collect_fields(file_path, id)
+        id = result.curr_idx
         all_results += result.final_jsonl
 
     output_dir = Path("../gha_jsonl")
     output_dir.mkdir(parents=True, exist_ok=True)
     path = output_dir / "final"
-    with open(str(path) + "_wrapped.json", 'w') as file:
+    with open(str(path) + ".jsonl", 'w') as file1, open(str(path) + "_chunked.json", 'w') as file2:
         wrapper = {"all" : []}
         for entry in all_results:
             od = OrderedDict([
+                ("id", entry["id"]),
                 ("document_title", entry["document_title"]),
                 ("full_section_title", entry["full_section_title"]),
                 ("content", entry["content"])
             ])
+            file1.write(json.dumps(od) + '\n')
             wrapper["all"].append(od)
-        file.write(json.dumps(wrapper))
+        file2.write(json.dumps(wrapper))
 
 
 if __name__ == '__main__':
