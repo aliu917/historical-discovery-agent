@@ -257,7 +257,7 @@ def is_next_continuing_text(text):
     return not text[0].isupper()
 
 
-def collect_fields(json_file, id):
+def collect_fields(json_file, id, single_chapter=False):
     result = ResultObject(id)
     with open (json_file, 'r') as file:
         data = json.load(file)
@@ -267,6 +267,9 @@ def collect_fields(json_file, id):
         new_chapter = False
         start = False
         start_chapters = False
+        if single_chapter:
+            start = True
+            start_chapters = True
         is_text_title = False
         sub_part_idx = 0
 
@@ -423,7 +426,7 @@ def create_new_section(result):
 
 def chunk_section(text):
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=500,
+        chunk_size=200,
         chunk_overlap=50,
         length_function=lambda x: len(tiktoken.get_encoding("o200k_base").encode(x)),
         is_separator_regex=False,
@@ -435,27 +438,32 @@ def chunk_section(text):
 def process_data(filename):
 
     all_results = []
+    single_chapters = True
 
     id = 0
-    # path = "../gha_texts/chapters"
-    # for filename in os.listdir(path):
-    #     if filename.split('.')[-1] != "json":
-    #         continue
-    #     file_path = os.path.join(path, filename)
-    #     print()
-    #     print("processing ", str(file_path))
-    #     print()
-    #     result = collect_fields(file_path, id)
-    #     id = result.curr_idx
-    #     all_results += result.final_jsonl
-
-    result = collect_fields(filename, id)
-    all_results = result.final_jsonl
+    if single_chapters:
+        path = "../gha_texts/chapters"
+        for filename in os.listdir(path):
+            if filename.split('.')[-1] != "json":
+                continue
+            file_path = os.path.join(path, filename)
+            print()
+            print("processing ", str(file_path))
+            print()
+            result = collect_fields(file_path, id, True)
+            id = result.curr_idx
+            all_results += result.final_jsonl
+        out_filename = "chapters"
+    else:
+        result = collect_fields(filename, id)
+        all_results = result.final_jsonl
+        out_filename = filename
 
     output_dir = Path("../gha_jsonl")
     output_dir.mkdir(parents=True, exist_ok=True)
-    path = output_dir / filename.split("/")[-1].split(".")[0]
-    with open(str(path) + ".jsonl", 'w') as file1, open(str(path) + "_chunked.json", 'w') as file2:
+    path = output_dir / out_filename.split("/")[-1].split(".")[0]
+
+    with open(str(path) + "_200.jsonl", 'w') as file1, open(str(path) + "_200.json", 'w') as file2:
         wrapper = {"all" : []}
         for entry in all_results:
             od = OrderedDict([
