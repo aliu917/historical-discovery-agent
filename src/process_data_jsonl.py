@@ -417,7 +417,7 @@ def create_new_section(result):
         new_jsonl["id"] = result.curr_idx
         result.curr_idx += 1
         new_jsonl["content"] = text_chunk
-        new_jsonl["document_title"] = result.full_section_list[0]
+        new_jsonl["document_title"] = result.full_section_list[0][0]
         new_jsonl["full_section_title"] = create_full_sections(result.full_section_list)
         result.final_jsonl.append(new_jsonl)
 
