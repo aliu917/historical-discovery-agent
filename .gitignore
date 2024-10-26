@@ -2,3 +2,4 @@
 sample.txt
 scratch.py
 gha_jsonl_small_chunk
+src/__pycache__/

@@ -56,7 +56,7 @@ class VectorDB:
 
     def query(self, query_text : str, k : int = 10, use_rerank = True):
         docs = self.db.similarity_search(query_text, k=k)
-        breakpoint()
+        # breakpoint()
         all_content = "\n".join([d.page_content for d in docs])
         if use_rerank and k > 1:
             convo = GPTQuery()
@@ -67,6 +67,6 @@ class VectorDB:
 
 
 if __name__ == '__main__':
-    vdb = VectorDB(json_doc_fpath='gha_jsonl_small_chunk/africa6_all.jsonl')
+    vdb = VectorDB(json_doc_fpath='gha_jsonl/chapters_200.jsonl')
     query = "liquor and alcohol"
     print(vdb.query(query, k=10))
