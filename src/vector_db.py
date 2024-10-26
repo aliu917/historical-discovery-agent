@@ -44,8 +44,9 @@ class VectorDB:
             for line in f:
                 chapter = json.loads(line.strip())
                 chapter_doc = Document(chapter['content'])
-                for key in ['id', 'document_title', 'full_section_title']:
+                for key in ['id', 'full_section_title']:
                     chapter_doc.metadata[key] = chapter[key]
+                chapter_doc.metadata['document_title'] = chapter['document_title'][0] # TODO: Ask Angela how final.jsonl was created and how to get document title better
                 documents.append(chapter_doc)
         
         self.documents = documents
@@ -66,6 +67,6 @@ class VectorDB:
 
 
 if __name__ == '__main__':
-    vdb = VectorDB(json_doc_fpath='gha_jsonl/final.jsonl')
+    vdb = VectorDB(json_doc_fpath='gha_jsonl_small_chunk/africa6_all.jsonl')
     query = "liquor and alcohol"
     print(vdb.query(query, k=10))
