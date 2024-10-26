@@ -423,7 +423,7 @@ def create_new_section(result):
 
 def chunk_section(text):
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=500,
+        chunk_size=100,
         chunk_overlap=50,
         length_function=lambda x: len(tiktoken.get_encoding("o200k_base").encode(x)),
         is_separator_regex=False,
@@ -452,7 +452,7 @@ def process_data(filename):
     result = collect_fields(filename, id)
     all_results = result.final_jsonl
 
-    output_dir = Path("../gha_jsonl")
+    output_dir = Path("../gha_jsonl_small_chunk")
     output_dir.mkdir(parents=True, exist_ok=True)
     path = output_dir / filename.split("/")[-1].split(".")[0]
     with open(str(path) + ".jsonl", 'w') as file1, open(str(path) + "_chunked.json", 'w') as file2:
@@ -470,7 +470,7 @@ def process_data(filename):
 
 
 if __name__ == '__main__':
-    process_data("../gha_texts/africa6_all.json")
+    process_data("../gha_texts/africa7_all.json")
 
 '''
 Output: files and section structure
