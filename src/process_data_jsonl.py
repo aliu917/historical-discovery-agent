@@ -78,7 +78,7 @@ import os
 import re
 import tiktoken
 
-
+CHUNK = 100
 end_titles = "Members of the International Scientific Committee for the Drafting of a General History of Africa"
 
 
@@ -426,7 +426,7 @@ def create_new_section(result):
 
 def chunk_section(text):
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=200,
+        chunk_size=CHUNK,
         chunk_overlap=50,
         length_function=lambda x: len(tiktoken.get_encoding("o200k_base").encode(x)),
         is_separator_regex=False,
@@ -463,7 +463,8 @@ def process_data(filename):
     output_dir.mkdir(parents=True, exist_ok=True)
     path = output_dir / out_filename.split("/")[-1].split(".")[0]
 
-    with open(str(path) + "_200.jsonl", 'w') as file1, open(str(path) + "_200.json", 'w') as file2:
+    filename = f"{str(path)}_{CHUNK}.json"
+    with open(filename + "l", 'w') as file1, open(filename, 'w') as file2:
         wrapper = {"all" : []}
         for entry in all_results:
             od = OrderedDict([
