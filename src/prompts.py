@@ -9,7 +9,7 @@ Conduct the extraction verbatim.
 def RERANK_DOCS_PROMPT(subject, retrieved_content):
     return f"""I'm looking for information about the topic "{subject}" in a series of documents. All documents are already known to be related to African history, and I am looking for specific mentions of this topic or closely synonymous topics in the document content. 
 From the list of section ID and section content below, identify the rows where the section content references this topic.
-Return a list containing each section ID and section content pair exactly as they are presented in the following format.
+Return a list containing each section ID and section content pair in the following format, but with the section content only containing the surrounding context needed to understand the topic.
 
 {retrieved_content}"""
 

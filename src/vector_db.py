@@ -15,7 +15,7 @@ class GPTQuery:
         openai.api_key = os.environ["OPENAI_API_KEY"]
         self.context = [] # Later if we want to do multiturn conversations
 
-    def query(self, prompt, max_tokens=500, use_context=False):
+    def query(self, prompt, max_tokens=1000, use_context=False):
         try:
             response = openai.chat.completions.create(
                 model=self.model,
@@ -108,12 +108,12 @@ if __name__ == '__main__':
 
 
 """
-ID: 460; CONTENT: Out of necessity, these kings acquiesced readily in Christianity and accepted protectorate status. Kgama and Lewanika became practising Christians, and, like most converted doctrinaires, they occasionally proved to be more devout even than the missionaries. They not only abandoned their ancestral traditions, beliefs and rituals, but used their political offices to impose the tenets of western, Christian civilization on their people. Their spirited efforts to banish the public use of alcoholic beverages were nearobsessive. They imposed stringent liquor laws which included a ban on the brewing of African beer. The more they alienated their people by the enforcement of such measures, the more they were forced to rely on missionaries.
+ID: 460; CONTENT: They not only abandoned their ancestral traditions, beliefs and rituals, but used their political offices to impose the tenets of western, Christian civilization on their people. Their spirited efforts to banish the public use of alcoholic beverages were near-obsessive. They imposed stringent liquor laws which included a ban on the brewing of African beer.
 
-ID: 274; CONTENT: as porters, dockers, streetsweepers, firewood-fetchers, makers of pots, mats and baskets, and brewers of an intoxicating drink called 'bouza'. 17 In India, the African slave undertook a number of menial tasks which Indians either could not (because of caste restrictions) or would not perform, or for which the British deemed themselves to be unsuited. In the princely states, slaves, especially Africans, served primarily as domestics concubines, eunuchs, water carriers, barbers, personal guards, stableboys, etc. We are informed that the king of Oudh (in what is now Uttar Pradesh) was supplied in the early nineteenth century with many Ethiopian male and female slaves and paid princely sums for them. Upon purchase they were all converted to Islam. We are also told that 'the rich and aristocratic Muslims, especially those who lived in cities like Patna and Calcutta, used to own besides male and female
+ID: 274; CONTENT: brewers of an intoxicating drink called 'bouza'.
 
-ID: 1259; CONTENT: out regularly for the interior. After the arrival of the Portuguese on the coast in 1471, trading was intensified to the point of becoming the main activity of the coastal peoples in the seventeenth, eighteenth and nineteenth centuries, cheap European goods - guns, alcoholic beverages, fabrics, cheap glassware, trinkets - being bartered for slaves, ivory, palm oil, rubber, ebony and redwood.
+ID: 1259; CONTENT: cheap European goods - guns, alcoholic beverages, fabrics, cheap glassware, trinkets - being bartered for slaves, ivory, palm oil, rubber, ebony and redwood.
 
-ID: 1217; CONTENT: In t h e economic sphere also, the disruption to normal agricultural activities must have been considerable. In addition, as was the case in the trade between the coastal middlemen and the Europeans, what the Igbo obtained for the slaves taken out was never commensurate with the total loss sustained as a result of the slave trade. Slaves were paid for with salt, fish, spirits, firearms, hats and beads, as well as iron, copper, and brass bars. The metal bars were turned into pewters, ritual bells, state swords, leg-rings, and other ornaments. But these supplies replaced local industries, and the Awka smiths turned their backs on local sources of metal. Importation of salt and cloth also undermined local industries.
+ID: 1217; CONTENT: Slaves were paid for with salt, fish, spirits, firearms, hats and beads, as well as iron, copper, and brass bars.
 
 """
