@@ -77,11 +77,12 @@ class VectorDB:
         print()
         return docs
 
-    def query(self, query_text : str, k : int = 10, use_rerank = True, similar_topics=True):
+    def query(self, query_text : str, k : int = 10, use_rerank = True, similar_topics=False, verbose=True):
         docs = self.db.similarity_search(query_text, k=k)
-        for d in docs[:k]:
-            print(f"ID: {d.metadata['id']}; CONTENT: {d.page_content}")
-        print()
+        if verbose:
+            for d in docs[:k]:
+                print(f"ID: {d.metadata['id']}; CONTENT: {d.page_content}")
+            print()
 
         convo = GPTQuery()
 

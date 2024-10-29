@@ -24,3 +24,14 @@ def FIND_SIMILAR_TOPIC_PROMPT(subject):
     
     Topic: {subject}
     Response: """
+
+def COMPARE_TEXTS_PROMPT(subject, gha_textbook, african_times_docs):
+    return f"""I have two historical sources that discuss {subject} in African history. The first is a general history textbook, with the following text: 
+
+General History of Africa: {gha_textbook}
+
+Another source is letters submitted to the African times, with the following text:
+
+Letters to African Times: {african_times_docs}
+     
+Identify meaningful differences in perspective between these two sources. How do the African times letters provide nuance to the more general statements made by the General History of Africa?"""
