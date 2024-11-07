@@ -78,7 +78,7 @@ import os
 import re
 import tiktoken
 
-CHUNK = 100
+CHUNK = 500
 end_titles = "Members of the International Scientific Committee for the Drafting of a General History of Africa"
 
 
@@ -438,7 +438,7 @@ def chunk_section(text):
 def process_data(filename):
 
     all_results = []
-    single_chapters = True
+    single_chapters = False
 
     id = 0
     if single_chapters:
@@ -479,7 +479,7 @@ def process_data(filename):
 
 
 if __name__ == '__main__':
-    process_data("../gha_texts/africa7_all.json")
+    process_data("../gha_texts/africa6_all.json")
 
 '''
 Output: files and section structure
