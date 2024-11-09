@@ -1,37 +1,18 @@
-from vector_db import VectorDB, GPTQuery
+from vector_db import GPTQuery
 from genie_search import *
 from prompts import *
 from knowledge_extract import extract_hypotheses
 
-vdb = VectorDB(json_doc_fpath='../gha_jsonl/chapters_200.jsonl')
 gpt_obj = GPTQuery()
-
-def compare_texts(topic : str):
-    gha_result = vdb.query(topic, k=20, verbose=False)
-    gha_remove_commentary = [x for x in gha_result.split("\n") if "**" in x]
-    gha_text_only = "\n\n".join([rc.split("**")[-1] for rc in gha_remove_commentary])
-    afr_times_json = african_times_request(topic, 2)
-    afr_times_content = [x['content'] for x in afr_times_json[0]['results']]
-    afr_times_text = "\n\nAnother Letter to the African times: ".join(afr_times_content)
-
-    prompt = COMPARE_TEXTS_PROMPT(topic, gha_text_only, afr_times_text)
-    res = gpt_obj.query(prompt) 
-
-    return res
 
 
 def find_compare_texts(topic : str):
-    hypotheses_list, all_hh_mappings = extract_hypotheses(topic)
+    hypotheses_list, all_hh_mappings, low_level_citation = extract_hypotheses(topic)
     hh_observations = {}
-    for hh_claim in all_hh_mappings:
+    for hh_claim, ll_ids in all_hh_mappings.items():
+        breakpoint() # @ANGELA BASICALLY UP TO HERE
         print(f"High-level topic related to {topic}: {hh_claim}")
-        # print()
-        # print("African times claims:")
-        afr_times_claims = all_hh_mappings[hh_claim]
-        # for claim in afr_times_claims:
-            # print("\t * " + claim)
 
-        print()
         result_chunks = gha_request(hh_claim)[0]['results'][:5]
         if not result_chunks:
             print("did not match any GHA chunks. Re-querying with overall topic string")

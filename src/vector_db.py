@@ -10,7 +10,7 @@ from prompts import *
 import openai
 
 class GPTQuery:
-    def __init__(self, model="gpt-4o-mini"):
+    def __init__(self, model="gpt-4o"):
         self.model = model
         openai.api_key = os.environ["OPENAI_API_KEY"]
         self.context = [] # Later if we want to do multiturn conversations
@@ -31,71 +31,6 @@ class GPTQuery:
             print("Error querying GPT-4:", e)
             return None
 
-
-class VectorDB:
-    def __init__(self, json_doc_fpath) -> None:
-        self._format_documents(json_doc_fpath)
-        self._embed()
-
-    def _format_documents(self, json_doc_fpath):
-        documents = []
-
-        with open(json_doc_fpath, 'r') as f:
-            for line in f:
-                chapter = json.loads(line.strip())
-                chapter_doc = Document(chapter['content'])
-                for key in ['id', 'full_section_title']:
-                    chapter_doc.metadata[key] = chapter[key]
-                chapter_doc.metadata['document_title'] = chapter['document_title']
-                documents.append(chapter_doc)
-        
-        self.documents = documents
-
-    def _embed(self):
-        self.db = Chroma.from_documents(self.documents, OpenAIEmbeddings())
-
-    def additional_similarity(self, query_text : str, convo : GPTQuery, docs : list, k : int = 5):
-        response = convo.query(FIND_SIMILAR_TOPIC_PROMPT(query_text)).strip().strip('"')
-        additional_topics = response.split(':')[-1].split(',')[:10]
-        print("also querying topics: ", response)
-
-        # Note: this seems to help a decent percentage of the time for alcohol
-        response_docs = self.db.similarity_search(response, k=20)
-        for d in response_docs[:20]:
-            if d not in docs:
-                print(f"ID: {d.metadata['id']}; CONTENT: {d.page_content}")
-                docs.append(d)
-        print()
-
-        # TODO: if this takes too long, can remove, it is very rarely helpful
-        for topic in additional_topics:
-            more_docs = self.db.similarity_search(topic.strip(), k=k)
-            for doc in more_docs:
-                if doc not in docs:
-                    print(f"ID: {doc.metadata['id']}; CONTENT: {doc.page_content}")
-                    docs.append(doc)
-        print()
-        return docs
-
-    def query(self, query_text : str, k : int = 10, use_rerank = True, similar_topics=False, verbose=True):
-        docs = self.db.similarity_search(query_text, k=k)
-        if verbose:
-            for d in docs[:k]:
-                print(f"ID: {d.metadata['id']}; CONTENT: {d.page_content}")
-            print()
-
-        convo = GPTQuery()
-
-        if similar_topics:
-            docs = self.additional_similarity(query_text, convo, docs)
-
-        # breakpoint()
-        all_content = "\n".join([f"ID: {d.metadata['id']}; CONTENT: {d.page_content}" for d in docs])
-        if use_rerank and k > 1:
-            convo = GPTQuery()
-            response = convo.query(RERANK_DOCS_PROMPT(query_text, all_content))
-            return response
-        return docs[:k]
 
 
 
