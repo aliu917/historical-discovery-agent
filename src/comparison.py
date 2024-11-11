@@ -2,58 +2,56 @@ from vector_db import GPTQuery
 from genie_search import *
 from prompts import *
 from knowledge_extract import extract_hypotheses
+from output_utils import *
 
 gpt_obj = GPTQuery()
 
 
-def find_compare_texts(topic : str):
-    hypotheses_list, all_hh_mappings, low_level_citation = extract_hypotheses(topic)
+def find_compare_texts(topic : str, log_outputs : bool = True):
+    print("querying topic:", topic)
+    write_obj = OutputWriter(run_name, topic, log_outputs)
+
+    print("extracting knowledge from TAT")
+    hypotheses_list, all_hh_mappings, low_level_citation = extract_hypotheses(topic, write_obj)
+
+    print("Extracting from GHA and comparing output")
     hh_observations = {}
     for hh_claim, ll_ids in all_hh_mappings.items():
-        breakpoint() # @ANGELA BASICALLY UP TO HERE
-        print(f"High-level topic related to {topic}: {hh_claim}")
-
-        result_chunks = gha_request(hh_claim)[0]['results'][:5]
-        if not result_chunks:
-            print("did not match any GHA chunks. Re-querying with overall topic string")
-            result_chunks = gha_request(topic)[0]['results'][:5]
-
-        print("GHA found results")
-        for result in result_chunks:
-            print(result)
-
-        print()
-        # print()
-        all_observations = ""
-        for chunk in result_chunks:
-            content = chunk["content"]
-            similar_prompt = FIND_COMPARE_PROMPT(hh_claim, afr_times_claims, content, "similarities")
-            similar_res = gpt_obj.query(similar_prompt)
-            diff_prompt = FIND_COMPARE_PROMPT(hh_claim, afr_times_claims, content, "differences")
-            diff_res = gpt_obj.query(diff_prompt)
-
-            all_observations += similar_res + "\n" + diff_res + "\n"
+        query = hh_claim
+        result_chunks = gha_request(query, requery=True, gpt_obj=gpt_obj)[0]['results'][:20]
 
         if not result_chunks:
-            claims = "\n".join(afr_times_claims)
-            all_observations = f"We found the following observations related to {hh_claim} from the African Times but nothing in the General History of Africa:{claims}"
+            print("GHA did not find results")
+            hh_gha_cmp = f'The General History of Africa has no information related to "{hh_claim}" or the overall topic of {topic}.'
+        else:
+            write_obj.append_hh_gha(hh_claim, result_chunks)
 
-        print("raw observations: ", all_observations)
-        print()
-        print()
-        result = gpt_obj.query(SUMMARIZE_KEY_POINTS(all_observations, hh_claim))
-        print(result)
+            prompt = HH_COMPARE_PROMPT(hh_claim, result_chunks, "General History of Africa textbook")
+            hh_gha_cmp = gpt_obj.query(prompt)
 
-        hh_observations[hh_claim] = result
+        # Extract details from relevant TAT chunks to retrieve more TAT details for final output
+        tat_chunks = []
+        for ll_id in ll_ids:
+            tat_chunks.append(low_level_citation[ll_id])
+        prompt = HH_COMPARE_PROMPT(hh_claim, tat_chunks, "African Times news articles")
+        hh_tat_cmp = gpt_obj.query(prompt)
 
-    final = gpt_obj.query(SUMMARIZE_FINAL_KEY_POINTS(hh_observations, topic))
-    return final
+        prompt = HH_COMBINE_PROMPT(hh_claim, hh_gha_cmp, hh_tat_cmp)
+        final_result = gpt_obj.query(prompt)
 
+        write_obj.append_final_cmp(hh_claim, hh_gha_cmp, hh_tat_cmp, final_result)
+
+    print()
 
 if __name__ == '__main__':
-    query = "alcohol"
-    res = find_compare_texts(query)
-    print()
-    print("###################")
-    print()
-    print(res)
+    run_name = "v1"
+    assert_run_path(run_name)
+
+    query_topics = [
+        "role of alcohol in Africa",
+        "proponents of formation of Israel",
+        "history of Kumasi",
+        "Fanti confederation",
+    ]
+    for query in query_topics:
+        find_compare_texts(query, True)

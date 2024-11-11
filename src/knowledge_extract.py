@@ -7,7 +7,7 @@ import re
 gpt_obj = GPTQuery()
 
 
-def extract_hypotheses(topic):
+def extract_hypotheses(topic, write_obj):
     low_level_citation = {}
     all_hh_mappings = {}
     all_hypotheses = []
@@ -20,18 +20,24 @@ def extract_hypotheses(topic):
             prompt = EXTRACT_HYPOTHESES_FROM_CHUNK(chunk['content'], t)
             response = gpt_obj.query(prompt)
             response = clean_list_hypotheses(response)
-            for i in range(len(response)):
-                if not len(response[i]): continue
+            write_obj.append_extract(chunk=chunk, ll=response)
+            cleaned_reponses = []
+            for k in range(len(response)):
+                if not len(response[k]):
+                    continue
                 pattern = r'^\d+\.'
                 ll_id = len(low_level_citation)
-                cleaned_res = re.sub(pattern, '', response[i].strip())
+                cleaned_res = re.sub(pattern, '', response[k].strip())
                 cleaned_res = f"[id: {ll_id}] {cleaned_res.replace('*', '')}"
-                response[i] = cleaned_res
+                cleaned_reponses.append(cleaned_res)
                 low_level_citation[ll_id] = chunk
-            all_hypotheses += response
-        
+            all_hypotheses += cleaned_reponses
+
         hh_mapping = get_high_level_hypotheses(all_hypotheses)
         all_hh_mappings.update(hh_mapping)
+
+    write_obj.append_extract(filename="tat_ll", ll=all_hypotheses)
+    write_obj.write_hh(all_hh_mappings, all_hypotheses)
 
     return all_hypotheses, all_hh_mappings, low_level_citation
 
@@ -51,7 +57,7 @@ def get_high_level_hypotheses(hypothesis_list):
     for common_hypothesis in response.split("*")[1:]:
         try:
             hypothesis, ll_ids = common_hypothesis.split("ids:") # TODO: this is trusting GPTs output a lot
-            hypothesis = hypothesis.strip()
+            hypothesis = hypothesis.strip().split('\n')[0]
             ll_ids = ast.literal_eval(ll_ids.split('\n')[0].strip())
             hypothesis_mapping[hypothesis] = ll_ids
         except:
@@ -69,9 +75,10 @@ def pprint(hypothesis_mapping):
 
 
 if __name__ == '__main__':
-    hypotheses_list, all_hh_mappings = extract_hypotheses("alcohol")
+    hypotheses_list, all_hh_mappings, low_level_citation = extract_hypotheses("alcohol")
     for h in hypotheses_list:
         print(h)
     print()
     # hh_mapping = get_high_level_hypotheses(hypotheses_list)
     pprint(all_hh_mappings)
+    pprint(low_level_citation)

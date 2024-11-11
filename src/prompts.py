@@ -87,6 +87,35 @@ Collect similar observations into a single combined observation to reduce the nu
 All observations should reference and retain at least one specific detail drawn from each text to avoid making vague blanket observations.
 """
 
+def FIND_SIMILAR_TOPIC_PROMPT(subject):
+    return f"""I'm looking for information about the topic "{subject}" in a series of documents. All documents are already known to be related to African history, so we do not have to search for general Africa keywords unless they are referring to a more specific region of Africa that would help narrrow down the search.
+    Please provide some additional key words or phrases related to this topic that I can search for in my document vector database. Make sure to identify the key topical words which make the topic unique and suggest some synonymous searches.
+    Return the words as a single string list. Make sure not to include words that may have other very different meanings and cause false negative search matches.
+    Here is an example:
+    Topic: impact of wealth on African trade
+    Response: riches, money, power imbalance, trade goods
+
+    Topic: {subject}
+    Response: """
+
+
+def HH_COMPARE_PROMPT(hh_claim, chunks, source):
+    format_chunks = ""
+    for chunk in chunks:
+        format_chunks += f'* {chunk["content"]}\n'
+    return f"""Read the following paragraphs from {source}:\n{format_chunks}\n\n
+From the above paragraphs, determine any details that support, refute, or are associated with the claim: {hh_claim}.\n
+We define meaningful details as any fact that an expert historian studying this area would be interested in discovering in terms of similarities and differences between the content in {source} and the claim.
+If the {source} does not include any information related to the claim, this is an interesting difference as well.
+Return the output of observations in the format of a short paragraph, paying particular attention to both similarities and differences between the claims and paragraphs."""
+
+
+def HH_COMBINE_PROMPT(hh_claim, gha_details, tat_details):
+    return f"""Combine the obsevations from the General History of Africa textbook and The African Times news articles about the following claim: {hh_claim}.\n
+From the General History of Africa, we observe the following related to the claim: {gha_details}.\n
+From The African Times, we observe the following related to the claim: {tat_details}.\n
+Combine the two observations into a coherent paragraph without losing any relevant details from either source."""
+
 if __name__ == '__main__':
     # print(GENERALIZE_HIGH_LEVEL_HYPOTHESES(["note1", "note2", "note3"]))
     print(FIND_COMPARE_PROMPT("silk road", ["The silk road was hot", "The silk road had many bandits"], "The Silk Road facilitated significant cultural exchanges between different civilizations.", "similarities"))
