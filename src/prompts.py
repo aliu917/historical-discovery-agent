@@ -63,6 +63,23 @@ Response:
 """
 
 
+def EXTRACT_ONE_COMMON_CLAIM(response_list):
+    response_list_str = "\n".join(response_list)
+    return f"""For the following list of detailed claims deduced from a primary source text, combine them into one single claim.
+A hypothesis or claim should be a statement that may be argued for or against given evidence. Choose hypotheses that an amateur historian studying the history of Africa would find interesting or novel.
+Here is an example:
+List of claims: 
+[id: 0] The British Rule in India impoverished the country by exploiting its resources and labor
+[id: 5] As a result of the exploitation of their land, many Indians fell into poverty and had to seek demeaning employment under the British.
+Response:
+* British rule led to widespread poverty in India by systematically extracting its resources and labor.
+
+List of claims:
+{response_list_str}
+Response:
+"""
+
+
 def SUMMARIZE_KEY_POINTS(long_text, topic, source_1="the African Times", source_2="the General History of Africa textbook"):
     return f"""We have found the following similarities and differences between {source_1} and {source_2} on the topic of {topic}:
 {long_text}\n
@@ -99,7 +116,9 @@ def FIND_SIMILAR_TOPIC_PROMPT(subject):
     Response: """
 
 
-def HH_COMPARE_PROMPT(hh_claim, chunks, source):
+def HH_COMPARE_PROMPT(hh_claim, chunks, source, cite=False):
+    if cite:
+        return
     format_chunks = ""
     for chunk in chunks:
         format_chunks += f'* {chunk["content"]}\n'
@@ -110,6 +129,20 @@ If the {source} does not include any information related to the claim, this is a
 Return the output of observations in the format of a short paragraph, paying particular attention to both similarities and differences between the claims and paragraphs."""
 
 
+
+def HH_COMPARE_PROMPT_CITE(hh_claim, chunks, source):
+    format_chunks = ""
+    for i, chunk in enumerate(chunks):
+        format_chunks += f'[{i}] \"{chunk["content"]}\"\n'
+    return f"""Read the following paragraphs from {source}:\n{format_chunks}\n\n
+From the above paragraphs, determine any details that support, refute, or are associated with the claim: {hh_claim}.\n
+First, identify the paragraphs that are relevant and provide useful information for comparison against the claim. Then, using only those paragraphs, compare and contrast the claim with the content in the relevant paragraph.
+We define meaningful details as any fact that an expert historian studying this area would be interested in discovering in terms of similarities and differences between the content in {source} and the claim.
+If the {source} does not include any information related to the claim, this is an interesting difference as well.
+Please return only the output of observations in the format of a short paragraph, paying particular attention to both similarities and differences between the claims and paragraphs.
+Additionally, for each paragraph chunk that was identified as relevant to the claim, please list these bracketed numbers at the end of the response (ex: 'response [i][j][k]')."""
+
+
 def HH_COMBINE_PROMPT(hh_claim, gha_details, tat_details):
     return f"""Combine the obsevations from the General History of Africa textbook and The African Times news articles about the following claim: {hh_claim}.\n
 From the General History of Africa, we observe the following related to the claim: {gha_details}.\n
@@ -118,6 +151,24 @@ Combine the two observations into a coherent paragraph without losing any releva
 
 if __name__ == '__main__':
     # print(GENERALIZE_HIGH_LEVEL_HYPOTHESES(["note1", "note2", "note3"]))
-    print(FIND_COMPARE_PROMPT("silk road", ["The silk road was hot", "The silk road had many bandits"], "The Silk Road facilitated significant cultural exchanges between different civilizations.", "similarities"))
-    print(FIND_COMPARE_PROMPT("silk road", ["The silk road was hot", "The silk road had many bandits"], "The Silk Road facilitated significant cultural exchanges between different civilizations.", "differences"))
+    # print(FIND_COMPARE_PROMPT("silk road", ["The silk road was hot", "The silk road had many bandits"], "The Silk Road facilitated significant cultural exchanges between different civilizations.", "similarities"))
+    # print(FIND_COMPARE_PROMPT("silk road", ["The silk road was hot", "The silk road had many bandits"], "The Silk Road facilitated significant cultural exchanges between different civilizations.", "differences"))
+    prompt = HH_COMPARE_PROMPT(
+        "The introduction of alcohol by European traders had a devastating impact on African societies, contributing significantly to the decline of coastal tribes.",
+        [{'document_title': 'The social repercussions of colonial rule: demographic aspects', 'section_title': 'The clashing forces of demographic change up to and beyond 1880', 'content': 'These were the major forces determining population change but there were undoubtedly others. Commerce was one, although whether such activities brought prosperity and the ability to buy food in times of need and perhaps some health care in the few places where it existed to a greater degree than it brought disease arising from increased contact with strangers is debatable. By 1880 cash crops included the cotton of Egypt, cloves in Zanzibar, sugar in Natal and an increasing area of groundnuts (peanuts) in Senegal, while in Algeria a European settler economy largely based on wheat and wine was being established. One aspect of trade almost certainly did have a deleterious effect on health, and that is the flow of strong alcoholic drink into the continent. There were two reasons for the trade: firstly that alcohol could be produced cheaply in Europe and sold for immense profits; secondly, in economies without widely accepted mediums of exchange, there were real problems about what goods would be accepted in return for the produce of Africa.$^{43}$ Mary Kingsley found the trade spirit pure and likely to do less harm than cannabis,$^{44}$ a view shared by a committee that investigated the liquor trade in içoç.$^{45}$ Spirits were distributed on a huge scale, frequently as wages. In 1894 half the total government revenue and 95 per cent of the customs duties of the Niger Coast Protectorate were derived from spirits; by 1894 the governmental income from this source totalled nearly £2 million.$^{46}$ Although the Brussels Act of 1892 tried unsuccessfully to limit the trade in the Congo (now Zaire), it was not successfully regulated in tropical Africa until the eve of the First World War.', 'last_edit_date': None, 'url': None, 'num_tokens': 0, 'block_metadata': None, 'similarity_score': 0.666, 'probability_score': 0.052},
+         {'document_title': 'The Niger delta and the Cameroon region',
+          'section_title': 'The Niger delta > The Igbo hinterland',
+          'content': 'The predominantly disruptive character of the slave trade may be shown in different ways. First, the manner in which slaves were procured tended to destroy social and political structures. Social outcasts, offenders against the law, were sold into slavery. A few persons were sold in times of famine or for debt. But the majority of slaves were apparently taken by kidnapping, raiding and wars. The oracle of the Aro is also known to have sold persons it adjudged guilty. But the Aro trade network throughout most of Igboland also obtained many of its slaves through the raids of its mercenary allies, the Abam, Ohaffia, Abiriba, and Edda. Accordingly, the extensive influence exercised by the Aro over Igboland through its oracle did not become an integrative force.$^{9}$ The element of violence inherent in Aro addiction to the slave trade thus distinguished their influence from the earlier ritual influ› ence of the Nri people over wide areas of Igboland.\nIn the economic sphere also, the disruption to normal agricultural activities must have been considerable. In addition, as was the case in the trade between the coastal middlemen and the Europeans, what the Igbo obtained for the slaves taken out was never commensurate with the total loss sustained as a result of the slave trade. Slaves were paid for with salt, fish, spirits, firearms, hats and beads, as well as iron, copper, and brass bars. The metal bars were turned into pewters, ritual bells, state swords, leg-rings, and other ornaments. But these supplies replaced local industries, and the Awka smiths turned their backs on local sources of metal. Import› ation of salt and cloth also undermined local industries.',
+          'last_edit_date': None, 'url': None, 'num_tokens': 0, 'block_metadata': None, 'similarity_score': 0.612,
+          'probability_score': 0.049},
+         {'document_title': 'The countries of the Zambezi basin',
+          'section_title': 'The slave trade and incorporation into the capitalist world economy',
+          'content': "rapidly becoming desert. About midday they came upon a large party of Ajawa [Yao], who were just returning from a successful raid. The smoke of burning villages was seen in the distance. A long train of captives carried the plunder, and their bitter cry was heard, even above the triumphant utterances of the Ajawa women, who came out... to welcome back the visitors. 53 Chikunda forays in the homelands of the Chewa, Tonga and Nsenga and as far north as the Lunda of Kazembe, and Arab-Swahili attacks against the people living in the Lake Malawi area produced similar turmoil and decay.$^{54}$ In the most extreme instances, entire regions were depopulated. One British official recanted in 1861 that 'An Arab who lately returned from Lake Nyasa informed me that he travelled for seventeen days through a country covered with ruined towns and villages ... where no living soul is to be seen.' 55 This loss of many of the most productive members of the society reinforced the rural dislocation. Although the evidence is uneven, data from the Zambezi region, the Shire valley and the Lake Malawi region suggest that famines recurred with great regularity,$^{56}$ which often necessi› tated the exchange of slaves for food, further intensifying the population drain. Whatever the case, the unstable conditions and threats of new raids prevented the resurgence of the rural economy.",
+          'last_edit_date': None, 'url': None, 'num_tokens': 0, 'block_metadata': None, 'similarity_score': 0.622,
+          'probability_score': 0.05}
+        ],
+        "General History of Africa textbook",
+        True
+    )
+    print(prompt)
 

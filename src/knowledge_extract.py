@@ -7,6 +7,13 @@ import re
 gpt_obj = GPTQuery()
 
 
+def extract_and_filter_numbers(text):
+    # Find all numbers within brackets
+    pattern = r'\[(\d+(?:\.\d+)?)\]'
+    matches = re.findall(pattern, text)
+    return [int(num) for num in matches]
+
+
 def extract_hypotheses(topic, write_obj):
     low_level_citation = {}
     all_hh_mappings = {}
@@ -55,8 +62,16 @@ def get_high_level_hypotheses(hypothesis_list):
 
     hypothesis_mapping = {}
     for common_hypothesis in response.split("*")[1:]:
+        if not common_hypothesis:
+            continue
         try:
             hypothesis, ll_ids = common_hypothesis.split("ids:") # TODO: this is trusting GPTs output a lot
+            if not ll_ids:
+                ids = extract_and_filter_numbers(common_hypothesis)
+                if not ids:
+                    raise Exception("Did not have any ids in format")
+                hypothesis = EXTRACT_ONE_COMMON_CLAIM([hypothesis_list[i] for i in ids])
+                ll_ids = str(ids)
             hypothesis = hypothesis.strip().split('\n')[0]
             ll_ids = ast.literal_eval(ll_ids.split('\n')[0].strip())
             hypothesis_mapping[hypothesis] = ll_ids
