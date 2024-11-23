@@ -30,9 +30,11 @@ It has impoverished the dumb millions by a system of progressive exploitation an
 It has reduced us politically to serfdom. It has sapped the foundations of our culture, and, by the policy of disarmament, it has degraded us spiritually. Lacking inward strength, we have been reduced by all but universal disarmament to a state bordering on cowardly helplessness. 
 
 Response:
-* The British Rule in India impoverished the country by exploiting its resources and labor
-* Through disarmament, the British treated Indians politically as second class citizens, destroying their morale and identity
-* Indians did not view Englishmen as inherently evil, but rather their subjugation by English policies as the evil.
+The British Rule in India impoverished the country by exploiting its resources and labor.
+Through disarmament, the British treated Indians politically as second class citizens, destroying their morale and identity.
+Indians did not view Englishmen as inherently evil, but rather their subjugation by English policies as the evil.
+
+Please structure the response as a single sentence for each claim, separated by a newline for each statement as shown above.
 
 Passage: {chunk}
 Response:
