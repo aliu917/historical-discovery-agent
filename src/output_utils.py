@@ -1,5 +1,8 @@
 import os
 import sys
+import json
+import numpy as np
+
 
 def format_topic(topic):
     topic = topic.lower()
@@ -19,14 +22,17 @@ def assert_run_path(run_name):
 
 class OutputWriter():
 
-    def __init__(self, run_name, topic, log=True):
-        self.topic = topic
-        topic = format_topic(topic)
-        out_path = f"../out/{run_name}/{topic}"
+    def __init__(self, run_name, topic=None, log=True):
+        out_path = f"../out/{run_name}"
+        if topic:
+            self.topic = topic
+            topic = format_topic(topic)
+            out_path += f"/{topic}"
         os.makedirs(out_path, exist_ok=True)
         self.out_dir = out_path + "/"
         self.files = []
         self.log = log
+        self.run_name = run_name
 
     def append_file(self, filename, content):
         if not self.log:
@@ -136,3 +142,44 @@ class OutputWriter():
             for g in tat:
                 file.write(f"* **{g['document_title']}**: {g['content']}\n")
             file.write("\n\n")
+            
+    def write_cluster(self, clusters, all_ll_list):
+        np.save(self.out_dir + 'cluster_labels', clusters.labels_)
+        np.save(self.out_dir + 'cluster_probs', clusters.probabilities_)
+        
+        numbered_ll = list(zip(list(range(len(all_ll_list))), all_ll_list))
+        probs_numbered_ll = list(zip(clusters.probabilities_.tolist(), numbered_ll))
+        cluster_ll = list(zip(clusters.labels_.tolist(), probs_numbered_ll))
+        sorted_cluster_ll = sorted(cluster_ll, key=lambda x: x[0])
+
+        file1 = open(self.out_dir + "cluster_ll", "w")
+        
+        no_cluster_str = ""
+        prev_cluster = -193847
+        for elem in sorted_cluster_ll:
+            cluster, (probs, (ll_id, ll)) = elem
+            if cluster == -1:
+                no_cluster_str += f"\t - [{round(probs, 2)}] {ll_id} - {ll}\n"
+                continue
+            if cluster != prev_cluster:
+                file1.write("\n")
+                file1.write(f"Cluster {int(cluster)}:\n")
+                prev_cluster = cluster
+            file1.write(f"\t - [{round(probs, 2)}] {ll_id} - {ll}\n")
+            
+        # Add all non-clustered data at the end
+        file1.write("\n\n")
+        file1.write(f"No cluster:\n")
+        file1.write(no_cluster_str)
+        
+        file1.close()
+
+    def write_params(self, params):
+        for name, param in params.items():
+            f = open(self.out_dir + name + ".json", "w")
+            json.dump(param, f)
+            f.close()
+            
+    def write_embeds(self, embeds, embed_name):
+        np.save(self.out_dir + embed_name + "_embeds", embeds)
+
