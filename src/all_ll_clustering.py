@@ -14,6 +14,25 @@ sentence_embed_model = SentenceTransformer("all-mpnet-base-v2")
 embed_save_path = "../tat/sentence_embeddings"
 batch_size = 32
 
+# https://umap-learn.readthedocs.io/en/latest/parameters.html
+umap_params = {
+    'n_neighbors': 10,
+    'min_dist': 0.0,
+    'n_components': 10,  # final reduced dimensionality
+    'metric': 'euclidean',
+    'random_state': 42,
+}
+
+# https://hdbscan.readthedocs.io/en/latest/parameter_selection.html
+hdbscan_params = {
+    'min_cluster_size': 3,
+    'min_samples': 2,
+    'approx_min_span_tree': True,  # faster, but use False for more accuracy
+    'cluster_selection_method': 'leaf',
+    'allow_single_cluster': True,
+    'memory': '../cache/',
+}
+
 
 class ClustersObj():
     def __init__(self, labels, probs):
@@ -107,7 +126,7 @@ def score_clusters(clusters, prob_threshold=0.05):
     return cost + penalty
 
 
-def run(write_obj, umap_params, hdbscan_params, custom_saved_path):
+def run(write_obj, umap_params, hdbscan_params, custom_saved_path="", score_cluster=True):
     all_ll_list = load_ll()
     print(f"loaded all {len(all_ll_list)} claims")
 
@@ -125,39 +144,53 @@ def run(write_obj, umap_params, hdbscan_params, custom_saved_path):
 
     clusters = generate_clusters(umap_embeds, hdbscan_params, saved_path)
 
-    print("writing clusters")
-    write_obj.write_cluster(clusters, all_ll_list)
+    if score_cluster:
+        print("writing clusters")
+        write_obj.write_cluster(clusters, all_ll_list)
 
-    score_clusters(clusters)
+        score_clusters(clusters)
+
+    return clusters, all_ll_list
+
+
+def get_clustered_lls():
+    run_name = "cluster_v1_full"
+    print("Gathering pre-computed clusters from run " + run_name)
+    write_obj = OutputWriter(run_name, log=False)
+
+    clusters, all_lls = run(write_obj, umap_params, hdbscan_params, score_cluster=False)
+    clusters_list = list(zip(clusters.labels_, clusters.probabilities_))
+
+    final_result = {}
+    for i, elem in enumerate(list(zip(clusters_list, all_lls))):
+        cluster, ll = elem
+        cluster_label, cluster_prob = cluster
+        cluster_label = int(cluster_label)
+        if cluster_label == -1:
+            continue
+        if cluster_label not in final_result:
+            final_result[cluster_label] = []
+        ll_obj = {"ll_id": i, "ll": ll, "cluster_prob": cluster_prob}
+        final_result[cluster_label].append(ll_obj)
+    return final_result
 
 
 if __name__ == '__main__':
     run_name = "cluster_v1_full"
-    custom_saved_path = ""
-    assert_run_path(run_name)
+    run_new_cluster = False
 
-    write_obj = OutputWriter(run_name, log=True)
+    if run_new_cluster:
+        custom_saved_path = ""
+        assert_run_path(run_name)
 
-    # https://umap-learn.readthedocs.io/en/latest/parameters.html
-    umap_params = {
-        'n_neighbors': 10,
-        'min_dist': 0.0,
-        'n_components': 10,  # final reduced dimensionality
-        'metric': 'euclidean',
-        'random_state': 42,
-    }
+        write_obj = OutputWriter(run_name, log=True)
 
-    # https://hdbscan.readthedocs.io/en/latest/parameter_selection.html
-    hdbscan_params = {
-        'min_cluster_size': 3,
-        'min_samples': 2,
-        'approx_min_span_tree': True,  # faster, but use False for more accuracy
-        'cluster_selection_method': 'leaf',
-        'allow_single_cluster': True,
-        'memory': '../cache/',
-    }
-
-    run(write_obj, umap_params, hdbscan_params, custom_saved_path)
+        run(write_obj, umap_params, hdbscan_params, custom_saved_path)
+    else:
+        result_map = get_clustered_lls()
+        f = open("../out/" + run_name + "/final_cluster_map.json", "w")
+        json.dump(result_map, f)
+        f.close()
     
 """
 Overriding existing run outputs at run name: cluster_v1_full. Confirm: y/n

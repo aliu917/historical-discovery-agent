@@ -144,6 +144,8 @@ class OutputWriter():
             file.write("\n\n")
             
     def write_cluster(self, clusters, all_ll_list):
+        if not self.log:
+            return
         np.save(self.out_dir + 'cluster_labels', clusters.labels_)
         np.save(self.out_dir + 'cluster_probs', clusters.probabilities_)
         
@@ -175,11 +177,15 @@ class OutputWriter():
         file1.close()
 
     def write_params(self, params):
+        if not self.log:
+            return
         for name, param in params.items():
             f = open(self.out_dir + name + ".json", "w")
             json.dump(param, f)
             f.close()
             
     def write_embeds(self, embeds, embed_name):
+        if not self.log:
+            return
         np.save(self.out_dir + embed_name + "_embeds", embeds)
 
