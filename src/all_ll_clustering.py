@@ -146,7 +146,7 @@ def run(write_obj, umap_params, hdbscan_params, custom_saved_path="", score_clus
 
     if score_cluster:
         print("writing clusters")
-        write_obj.write_cluster(clusters, all_ll_list)
+        write_obj.write_cluster(clusters[1:], all_ll_list[1:])  # Remove first elem since it's "Found low level hypotheses:"
 
         score_clusters(clusters)
 
@@ -162,7 +162,7 @@ def get_clustered_lls():
     clusters_list = list(zip(clusters.labels_, clusters.probabilities_))
 
     final_result = {}
-    for i, elem in enumerate(list(zip(clusters_list, all_lls))):
+    for i, elem in enumerate(list(zip(clusters_list[1:], all_lls[1:]))):  # Remove first elem since it's Found low level hypotheses:
         cluster, ll = elem
         cluster_label, cluster_prob = cluster
         cluster_label = int(cluster_label)
