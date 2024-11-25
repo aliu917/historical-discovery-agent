@@ -2,8 +2,16 @@ import os
 import sys
 import json
 import numpy as np
+import os
+from dotenv import load_dotenv
+load_dotenv()
+import openai
 
-
+def read_jsonl(file_path):
+    with open(file_path, 'r') as file:
+        for line in file:
+            yield json.loads(line.strip())
+            
 def format_topic(topic):
     topic = topic.lower()
     topic = topic.replace(" ", "_")
@@ -189,3 +197,24 @@ class OutputWriter():
             return
         np.save(self.out_dir + embed_name + "_embeds", embeds)
 
+class GPTQuery:
+    def __init__(self, model="gpt-4o"):
+        self.model = model
+        openai.api_key = os.environ["OPENAI_API_KEY"]
+        self.context = [] # Later if we want to do multiturn conversations
+
+    def query(self, prompt, max_tokens=1000, use_context=False):
+        try:
+            response = openai.chat.completions.create(
+                model=self.model,
+                messages= [*self.context, {"role": "user", "content": prompt}] if use_context \
+                                        else [{"role": "user", "content": prompt}],
+                max_tokens=max_tokens,
+                temperature=0,
+                n=1,
+            )
+            # breakpoint()
+            return response.choices[0].message.content
+        except Exception as e:
+            print("Error querying GPT-4:", e)
+            return None

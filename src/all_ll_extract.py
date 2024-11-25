@@ -1,8 +1,7 @@
-from vector_db import GPTQuery
 from genie_search import african_times_request
 from prompts import *
 from knowledge_extract import clean_list_hypotheses
-from output_utils import *
+from utils import *
 import ast
 import re
 import json
@@ -11,11 +10,6 @@ from collections import OrderedDict
 
 gpt_obj = GPTQuery()
 
-
-def read_jsonl(file_path):
-    with open(file_path, 'r') as file:
-        for line in file:
-            yield json.loads(line.strip())
 
 
 def extract_all_tat(write_obj):

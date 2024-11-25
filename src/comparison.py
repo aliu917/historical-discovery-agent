@@ -1,8 +1,7 @@
-from vector_db import GPTQuery
 from genie_search import *
 from prompts import *
-from knowledge_extract import extract_hypotheses
-from output_utils import *
+from knowledge_extract import extract_hypotheses, extract_hypotheses_from_cluster
+from utils import *
 import re
 
 gpt_obj = GPTQuery()
@@ -13,16 +12,23 @@ def extract_citations(text):
     numbers = re.findall(pattern, text)
     return [int(num) for num in numbers]
 
-
-def find_compare_texts(topic : str, log_outputs : bool = True, short_cite : bool = False):
-    print("querying topic:", topic)
-    write_obj = OutputWriter(run_name, topic, log_outputs)
+"""
+Compare the different perspectives between The African Times (TAT) and General History of Africa (GHA) on `topic`
+If topic is not provided (empty string) then cluster_map_path and ll_citation_path must be given. The cluster_map is a 
+json file that aggregates all low level hypotheses from TAT. The output will be an aggregation of all 
+similarities and differences between TAT and GHA
+"""
+def find_compare_texts(topic : str = "", log_outputs : bool = True, short_cite : bool = False, cluster_map_path : str = None, ll_citation_path : str = None):
+    print("querying topic:", topic if topic else "overall")
+    write_obj = OutputWriter(run_name, topic if topic else "overall", log_outputs)
 
     print("extracting knowledge from TAT")
-    hypotheses_list, all_hh_mappings, low_level_citation = extract_hypotheses(topic, write_obj)
+    if topic:
+        hypotheses_list, all_hh_mappings, low_level_citation = extract_hypotheses(topic, write_obj)
+    else:
+        all_hh_mappings, low_level_citation = extract_hypotheses_from_cluster(cluster_map_path, ll_citation_path, write_obj)
 
     print("Extracting from GHA and comparing output")
-    hh_observations = {}
     for hh_claim, ll_ids in all_hh_mappings.items():
         query = hh_claim
         result_chunks = gha_request(query, requery=True, gpt_obj=gpt_obj)[0]['results'][:20]
@@ -58,14 +64,19 @@ def find_compare_texts(topic : str, log_outputs : bool = True, short_cite : bool
     print()
 
 if __name__ == '__main__':
-    run_name = "v1_nocite"
-    assert_run_path(run_name)
+    run_name = "v1_nocite_all_topics"
+    # assert_run_path(run_name)
 
-    query_topics = [
-        "role of alcohol in Africa",
-        "proponents of formation of Israel",
-        "history of Kumasi",
-        "Fanti confederation",
-    ]
-    for query in query_topics:
-        find_compare_texts(query, log_outputs=True, short_cite=False)
+    # query_topics = [
+    #     "role of alcohol in Africa",
+    #     "proponents of formation of Israel",
+    #     "history of Kumasi",
+    #     "Fanti confederation",
+    # ]
+    # for query in query_topics:
+    #     find_compare_texts(query, log_outputs=True, short_cite=False)
+    find_compare_texts("", 
+                       log_outputs=True,
+                       short_cite=False,
+                       cluster_map_path="../out/cluster_v1_full/final_cluster_map.json",
+                       ll_citation_path="../tat/tat_ll_map.jsonl")

@@ -1,8 +1,10 @@
-from vector_db import GPTQuery
 from genie_search import african_times_request
 from prompts import *
 import ast
+from tqdm import tqdm
 import re
+from utils import read_jsonl, GPTQuery
+import json
 
 gpt_obj = GPTQuery()
 
@@ -43,11 +45,28 @@ def extract_hypotheses(topic, write_obj):
         hh_mapping = get_high_level_hypotheses(all_hypotheses)
         all_hh_mappings.update(hh_mapping)
 
+    breakpoint()
     write_obj.append_extract(filename="tat_ll", ll=all_hypotheses)
     write_obj.write_hh(all_hh_mappings, all_hypotheses)
 
     return all_hypotheses, all_hh_mappings, low_level_citation
 
+
+def extract_hypotheses_from_cluster(cluster_map_path, ll_citation_path, write_obj):
+    all_hh_mappings = {}
+    with open(cluster_map_path, 'r') as f:
+        ll_clusters = json.load(f)
+    for cluster_id, ll_claims in tqdm(ll_clusters.items()):
+        ll_clustered_formatted = [f"[id: {ll_claim['ll_id']}] {ll_claim['ll']}" for ll_claim in ll_claims]
+        hh_mapping = get_high_level_hypotheses(ll_clustered_formatted)
+        all_hh_mappings.update(hh_mapping)
+
+    low_level_unformatted = read_jsonl(ll_citation_path)
+    low_level_citation = {}
+    for ll_uf in low_level_unformatted:
+        low_level_citation[ll_uf['id']] = ll_uf['chunk']
+    
+    return all_hh_mappings, low_level_citation
 
 def clean_list_hypotheses(response):
     response_list = list(filter(lambda x: len(x) > 5, response.split('\n')))

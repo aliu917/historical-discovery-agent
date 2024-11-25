@@ -7,7 +7,7 @@ import torch
 import numpy as np
 import os
 
-from output_utils import *
+from utils import *
 
 
 sentence_embed_model = SentenceTransformer("all-mpnet-base-v2")
@@ -16,17 +16,18 @@ batch_size = 32
 
 # https://umap-learn.readthedocs.io/en/latest/parameters.html
 umap_params = {
-    'n_neighbors': 10,
-    'min_dist': 0.0,
-    'n_components': 10,  # final reduced dimensionality
+    'n_neighbors': 50,
+    'min_dist': 0.4,
+    'n_components': 50,  # final reduced dimensionality
     'metric': 'euclidean',
     'random_state': 42,
 }
 
 # https://hdbscan.readthedocs.io/en/latest/parameter_selection.html
 hdbscan_params = {
-    'min_cluster_size': 3,
-    'min_samples': 2,
+    'min_cluster_size': 15,
+    'min_samples': 1,
+    'cluster_selection_epsilon': 0.3,
     'approx_min_span_tree': True,  # faster, but use False for more accuracy
     'cluster_selection_method': 'leaf',
     'allow_single_cluster': True,
@@ -176,7 +177,7 @@ def get_clustered_lls():
 
 
 if __name__ == '__main__':
-    run_name = "cluster_v1_full"
+    run_name = "cluster_v2_attempt_bigger_clusters"
     run_new_cluster = False
 
     if run_new_cluster:
@@ -189,7 +190,7 @@ if __name__ == '__main__':
     else:
         result_map = get_clustered_lls()
         f = open("../out/" + run_name + "/final_cluster_map.json", "w")
-        json.dump(result_map, f)
+        json.dump(result_map, f, indent=4)
         f.close()
     
 """
