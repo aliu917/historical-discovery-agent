@@ -46,7 +46,6 @@ def extract_hypotheses(topic, write_obj):
         hh_mapping = get_high_level_hypotheses(all_hypotheses)
         all_hh_mappings.update(hh_mapping)
 
-    breakpoint()
     write_obj.append_extract(filename="tat_ll", ll=all_hypotheses)
     write_obj.write_hh(all_hh_mappings, all_hypotheses)
 
@@ -72,14 +71,11 @@ def extract_hypotheses_from_cluster_generator(cluster_map_path, low_level_citati
     with open(cluster_map_path, 'r') as f:
         ll_clusters = json.load(f)
     # all_hypotheses = load_ll()[1:]
-    i = 0
-    for cluster_id, ll_claims in tqdm(ll_clusters.items()):
-        if i > 20:
-            break
-        i+= 1
+    for i, (cluster_id, ll_claims) in tqdm(enumerate(ll_clusters.items())):
+        if i > 20: break
         ll_clustered_formatted = [f"[id: {ll_claim['ll_id']}] {ll_claim['ll']}" for ll_claim in ll_claims]
         # hh_mapping = get_high_level_hypotheses(ll_clustered_formatted)
-        hh_mapping = get_single_high_level_hypotheses(ll_clustered_formatted, [ll_claim['ll_id'] for ll_claim in ll_claims])
+        hh_mapping = get_high_level_hypotheses(ll_clustered_formatted, [ll_claim['ll_id'] for ll_claim in ll_claims])
         write_obj.append_hh(hh_mapping, [ll_claim['ll'] for ll_claim in ll_claims])
         for hh_claim, ll_ids in hh_mapping.items():
             yield hh_claim, ll_ids, low_level_citation
@@ -92,8 +88,9 @@ def clean_list_hypotheses(response):
 
 
 # requery
-def get_high_level_hypotheses(hypothesis_list):
+def get_high_level_hypotheses(hypothesis_list, unused_ids=None):
     prompt = EXTRACT_COMMON_CLAIMS(hypothesis_list)
+    breakpoint()
     response = gpt_obj.query(prompt)
 
     hypothesis_mapping = {}
@@ -124,9 +121,6 @@ def get_single_high_level_hypotheses(hypothesis_list, ids=None):
     if ids:
         return {response : ids}
     return response
-    
-
-
 
 def pprint(hypothesis_mapping):
     for h in hypothesis_mapping:

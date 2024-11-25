@@ -65,7 +65,7 @@ def find_compare_texts(topic : str = "", run_name : str = "run1", log_outputs : 
     print()
 
 if __name__ == '__main__':
-    run_name = "v2_cluster_single_hh_yield"
+    run_name = "v2_cluster_multiple_hh_yield"
     assert_run_path(run_name)
 
     # query_topics = [
