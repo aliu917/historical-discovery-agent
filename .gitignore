@@ -3,3 +3,5 @@ sample.txt
 scratch.py
 gha_jsonl_small_chunk
 src/__pycache__/
+tat/tat_ll_map.jsonl
+tat/tat_ll.txt
