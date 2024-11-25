@@ -69,13 +69,14 @@ Response:
 def EXTRACT_ONE_COMMON_CLAIM(response_list):
     response_list_str = "\n".join(response_list)
     return f"""For the following list of detailed claims deduced from a primary source text, combine them into one single claim.
-A hypothesis or claim should be a statement that may be argued for or against given evidence. Choose hypotheses that an amateur historian studying the history of Africa would find interesting or novel.
+A hypothesis or claim should be a statement that may be argued for or against given evidence. Choose hypotheses that an expert historian studying the history of Africa would find interesting or novel.
+Return the response as a single sentence.
 Here is an example:
 List of claims: 
 [id: 0] The British Rule in India impoverished the country by exploiting its resources and labor
 [id: 5] As a result of the exploitation of their land, many Indians fell into poverty and had to seek demeaning employment under the British.
 Response:
-* British rule led to widespread poverty in India by systematically extracting its resources and labor.
+British rule led to widespread poverty in India by systematically extracting its resources and labor.
 
 List of claims:
 {response_list_str}
@@ -124,7 +125,11 @@ def HH_COMPARE_PROMPT(hh_claim, chunks, source, cite=False):
         return
     format_chunks = ""
     for chunk in chunks:
-        format_chunks += f'* {chunk["content"]}\n'
+        if "content" in chunk:
+            content = "content"
+        else:
+            content = "content_string"
+        format_chunks += f'* {chunk[content]}\n'
     return f"""Read the following paragraphs from {source}:\n{format_chunks}\n\n
 From the above paragraphs, determine any details that support, refute, or are associated with the claim: {hh_claim}.\n
 We define meaningful details as any fact that an expert historian studying this area would be interested in discovering in terms of similarities and differences between the content in {source} and the claim.

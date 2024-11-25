@@ -79,6 +79,29 @@ class OutputWriter():
         file1.close()
         file2.close()
 
+    def append_hh(self, hh_mapping, all_ll):
+        if not self.log:
+            return
+
+        filepath1 = self.out_dir + "tat_hh_ll"
+        write_type = "a"
+        prepend = ""
+        if filepath1 not in self.files:
+            write_type = "w"
+            self.files.append(filepath1)
+        
+        file1 = open(filepath1, write_type)
+        file2 = open(self.out_dir + "tat_hh", write_type)
+        
+        for hh in hh_mapping:
+            file1.write(f"{prepend}[HH] {hh}\n")
+            file2.write(f"- {hh}\n")
+            for i, ll_id in enumerate(hh_mapping[hh]):
+                file1.write(f"\t - {ll_id}:{all_ll[i]}\n")
+            file1.write("\n\n")
+        file1.close()
+        file2.close()
+
     def append_hh_gha(self, hh, gha_chunks, citations):
         if not self.log:
             return
@@ -114,7 +137,7 @@ class OutputWriter():
         file1 = open(filepath1, write_type)
         file2 = open(filepath2, write_type)
 
-        file2.write(f"{prepend2}{final}\n\n")
+        file2.write(f"{prepend2}# {hh}\n\n{final}\n\n")
         file1.write(f"{prepend1}HH: {hh}\n\n")
         file1.write(f"\t - From GHA: {gha_cmp}\n")
         file1.write(f"\t - From TAT: {tat_cmp}\n")
@@ -148,7 +171,15 @@ class OutputWriter():
         if tat:
             file.write("Retrieved TAT chunks:\n")
             for g in tat:
-                file.write(f"* **{g['document_title']}**: {g['content']}\n")
+                if "article_title" in g:
+                    title = "article_title"
+                else:
+                    title = "document_title"
+                if "content" in g:
+                    content = "content"
+                else:
+                    content = "content_string"
+                file.write(f"* **{g[title]}**: {g[content]}\n")
             file.write("\n\n")
             
     def write_cluster(self, clusters, all_ll_list):

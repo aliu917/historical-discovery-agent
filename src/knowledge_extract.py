@@ -1,5 +1,6 @@
 from genie_search import african_times_request
 from prompts import *
+from all_ll_clustering import load_ll
 import ast
 from tqdm import tqdm
 import re
@@ -52,21 +53,37 @@ def extract_hypotheses(topic, write_obj):
     return all_hypotheses, all_hh_mappings, low_level_citation
 
 
-def extract_hypotheses_from_cluster(cluster_map_path, ll_citation_path, write_obj):
-    all_hh_mappings = {}
-    with open(cluster_map_path, 'r') as f:
-        ll_clusters = json.load(f)
-    for cluster_id, ll_claims in tqdm(ll_clusters.items()):
-        ll_clustered_formatted = [f"[id: {ll_claim['ll_id']}] {ll_claim['ll']}" for ll_claim in ll_claims]
-        hh_mapping = get_high_level_hypotheses(ll_clustered_formatted)
-        all_hh_mappings.update(hh_mapping)
-
+def extract_hypotheses_generator(topic, write_obj):
+    all_hypotheses, all_hh_mappings, low_level_citation = extract_hypotheses(topic, write_obj)
+    for hh_claim, ll_ids in all_hh_mappings.items():
+        yield hh_claim, ll_ids, low_level_citation
+        
+        
+def low_level_citations_all(ll_citation_path):
     low_level_unformatted = read_jsonl(ll_citation_path)
     low_level_citation = {}
     for ll_uf in low_level_unformatted:
-        low_level_citation[ll_uf['id']] = ll_uf['chunk']
-    
-    return all_hh_mappings, low_level_citation
+        low_level_citation[ll_uf['id']] = ast.literal_eval(ll_uf['chunk'])
+    return low_level_citation
+
+
+def extract_hypotheses_from_cluster_generator(cluster_map_path, low_level_citation, write_obj):
+    all_hh_mappings = {}
+    with open(cluster_map_path, 'r') as f:
+        ll_clusters = json.load(f)
+    # all_hypotheses = load_ll()[1:]
+    i = 0
+    for cluster_id, ll_claims in tqdm(ll_clusters.items()):
+        if i > 20:
+            break
+        i+= 1
+        ll_clustered_formatted = [f"[id: {ll_claim['ll_id']}] {ll_claim['ll']}" for ll_claim in ll_claims]
+        # hh_mapping = get_high_level_hypotheses(ll_clustered_formatted)
+        hh_mapping = get_single_high_level_hypotheses(ll_clustered_formatted, [ll_claim['ll_id'] for ll_claim in ll_claims])
+        write_obj.append_hh(hh_mapping, [ll_claim['ll'] for ll_claim in ll_claims])
+        for hh_claim, ll_ids in hh_mapping.items():
+            yield hh_claim, ll_ids, low_level_citation
+
 
 def clean_list_hypotheses(response):
     response_list = list(filter(lambda x: len(x) > 5, response.split('\n')))
@@ -89,7 +106,7 @@ def get_high_level_hypotheses(hypothesis_list):
                 ids = extract_and_filter_numbers(common_hypothesis)
                 if not ids:
                     raise Exception("Did not have any ids in format")
-                hypothesis = EXTRACT_ONE_COMMON_CLAIM([hypothesis_list[i] for i in ids])
+                hypothesis = get_single_high_level_hypotheses([hypothesis_list[i] for i in ids])
                 ll_ids = str(ids)
             hypothesis = hypothesis.strip().split('\n')[0]
             ll_ids = ast.literal_eval(ll_ids.split('\n')[0].strip())
@@ -99,6 +116,16 @@ def get_high_level_hypotheses(hypothesis_list):
             breakpoint()
 
     return hypothesis_mapping
+
+
+def get_single_high_level_hypotheses(hypothesis_list, ids=None):
+    prompt = EXTRACT_ONE_COMMON_CLAIM(hypothesis_list)
+    response = gpt_obj.query(prompt)
+    if ids:
+        return {response : ids}
+    return response
+    
+
 
 
 def pprint(hypothesis_mapping):
