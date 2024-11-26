@@ -72,7 +72,6 @@ def extract_hypotheses_from_cluster_generator(cluster_map_path, low_level_citati
         ll_clusters = json.load(f)
     # all_hypotheses = load_ll()[1:]
     for i, (cluster_id, ll_claims) in tqdm(enumerate(ll_clusters.items())):
-        if i > 20: break
         ll_clustered_formatted = [f"[id: {ll_claim['ll_id']}] {ll_claim['ll']}" for ll_claim in ll_claims]
         # hh_mapping = get_high_level_hypotheses(ll_clustered_formatted)
         hh_mapping = get_high_level_hypotheses(ll_clustered_formatted, [ll_claim['ll_id'] for ll_claim in ll_claims])
@@ -90,7 +89,6 @@ def clean_list_hypotheses(response):
 # requery
 def get_high_level_hypotheses(hypothesis_list, unused_ids=None):
     prompt = EXTRACT_COMMON_CLAIMS(hypothesis_list)
-    breakpoint()
     response = gpt_obj.query(prompt)
 
     hypothesis_mapping = {}
@@ -109,8 +107,7 @@ def get_high_level_hypotheses(hypothesis_list, unused_ids=None):
             ll_ids = ast.literal_eval(ll_ids.split('\n')[0].strip())
             hypothesis_mapping[hypothesis] = ll_ids
         except:
-            print(f"Error with common_hypothesis {common_hypothesis}, breaking")
-            breakpoint()
+            print(f"Error with common_hypothesis {common_hypothesis}, you can break here")
 
     return hypothesis_mapping
 
