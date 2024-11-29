@@ -7,6 +7,43 @@ import re
 gpt_obj = GPTQuery()
 
 
+def check_query(query):
+    if len(query) > 512:
+        print("Shortening original query:")
+        print("\t- " + query)
+        print("\t- " + query[:512])
+        print()
+        query = query[:512]
+    if "[not african]" in query:
+        print("Query not relevant to African history:", query)
+        print()
+        return query, False
+    return query, True
+
+
+def get_tat_chunks(low_level_citation, ll_ids, query=""):
+    tat_chunks = []
+    chunk_set = set()
+    for ll_id in ll_ids:
+        chunk_str = low_level_citation[ll_id]["content_string"]
+        if chunk_str in chunk_set:
+            continue
+        low_level_citation[ll_id]["content"] = low_level_citation[ll_id].pop("content_string")
+        tat_chunks.append(low_level_citation[ll_id])
+        chunk_set.add(chunk_str)
+
+    # Augment TAT with more chunks to find additional relevant unclustered chunks.
+    added_chunks = []
+    if query:
+        tat_orig = [c["content"] for c in tat_chunks]
+        result_chunks = african_times_request(query, num_blocks=15)[0]['results'][:20]
+        for chunk in result_chunks:
+            if chunk["content"] not in tat_orig:
+                tat_chunks.append(chunk)
+                added_chunks.append(chunk)
+    return tat_chunks, added_chunks
+
+
 def extract_citations(text):
     pattern = r'\[(\d+)\]'
     numbers = re.findall(pattern, text)
@@ -32,6 +69,7 @@ def find_compare_texts(topic : str = "", run_name : str = "run1", log_outputs : 
     print("Extracting from GHA and comparing output")
     for hh_claim, ll_ids, low_level_citation in h_generator:
         query = hh_claim
+        query, ok = check_query(query)
         result_chunks = gha_request(query, requery=True, gpt_obj=gpt_obj)[0]['results'][:20]
 
         if not result_chunks:
@@ -43,29 +81,30 @@ def find_compare_texts(topic : str = "", run_name : str = "run1", log_outputs : 
             citations = extract_citations(hh_gha_cmp) if short_cite else list(range(len(result_chunks)))
             citations = list(set(citations))
 
-            write_obj.append_hh_gha(hh_claim, result_chunks, citations)
+            write_obj.append_hh_gha(hh_claim, result_chunks, citations, ok=ok)
 
             if citations:
                 result_chunks = [result_chunks[i] for i in citations]
 
-
         # Extract details from relevant TAT chunks to retrieve more TAT details for final output
-        tat_chunks = []
-        for ll_id in ll_ids:
-            tat_chunks.append(low_level_citation[ll_id])
+        tat_chunks, added_chunks = get_tat_chunks(low_level_citation, ll_ids, query=query)
+        orig_chunk_len = len(tat_chunks) - len(added_chunks)
+        write_obj.append_hh_tat(hh_claim, tat_chunks, orig_chunk_len, ok=ok)
         prompt = HH_COMPARE_PROMPT(hh_claim, tat_chunks, "African Times news articles")
         hh_tat_cmp = gpt_obj.query(prompt)
 
         prompt = HH_COMBINE_PROMPT(hh_claim, hh_gha_cmp, hh_tat_cmp)
         final_result = gpt_obj.query(prompt)
 
-        write_obj.append_final_cmp(hh_claim, hh_gha_cmp, hh_tat_cmp, final_result)
-        write_obj.log_analysis_doc(hh_claim, final_result, result_chunks, tat_chunks, short_cite)
+        write_obj.log_final_code(hh_claim, final_result, hh_gha_cmp, hh_tat_cmp, result_chunks, tat_chunks, orig_chunk_len, ok=True)
+        write_obj.append_final_cmp(hh_claim, hh_gha_cmp, hh_tat_cmp, final_result, ok=ok)
+        write_obj.log_analysis_doc(hh_claim, final_result, result_chunks, tat_chunks, short_cite, ok=ok)
 
     print()
+    write_obj.end_task()
 
 if __name__ == '__main__':
-    run_name = "v2_cluster_single_hh_yield"
+    run_name = "v2_cluster_single_final"
     assert_run_path(run_name)
 
     # query_topics = [

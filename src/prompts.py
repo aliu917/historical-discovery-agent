@@ -78,6 +78,9 @@ List of claims:
 Response:
 British rule led to widespread poverty in India by systematically extracting its resources and labor.
 
+If the list of claims do not include any information about Africa, please include a tag "[not african]" before the response. If the claim is relevant to Africa, do not include any additional tags or explanations, simply retun the single sentence claim statement.
+Make sure the response is concise and efficiently communicates the core ideas of all hypotheses without including superfluous words.
+
 List of claims:
 {response_list_str}
 Response:

@@ -68,17 +68,10 @@ def low_level_citations_all(ll_citation_path):
 
 
 def extract_hypotheses_from_cluster_generator(cluster_map_path, low_level_citation, write_obj):
-    all_hh_mappings = {}
     with open(cluster_map_path, 'r') as f:
         ll_clusters = json.load(f)
-    # all_hypotheses = load_ll()[1:]
-    i = 0
     for cluster_id, ll_claims in tqdm(ll_clusters.items()):
-        if i > 20:
-            break
-        i+= 1
         ll_clustered_formatted = [f"[id: {ll_claim['ll_id']}] {ll_claim['ll']}" for ll_claim in ll_claims]
-        # hh_mapping = get_high_level_hypotheses(ll_clustered_formatted)
         hh_mapping = get_single_high_level_hypotheses(ll_clustered_formatted, [ll_claim['ll_id'] for ll_claim in ll_claims])
         write_obj.append_hh(hh_mapping, [ll_claim['ll'] for ll_claim in ll_claims])
         for hh_claim, ll_ids in hh_mapping.items():

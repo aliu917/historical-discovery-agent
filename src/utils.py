@@ -6,6 +6,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 import openai
+import csv
 
 def read_jsonl(file_path):
     with open(file_path, 'r') as file:
@@ -41,6 +42,7 @@ class OutputWriter():
         self.files = []
         self.log = log
         self.run_name = run_name
+        self.close_files = []
 
     def append_file(self, filename, content):
         if not self.log:
@@ -102,10 +104,35 @@ class OutputWriter():
         file1.close()
         file2.close()
 
-    def append_hh_gha(self, hh, gha_chunks, citations):
+
+    def append_hh_tat(self, hh, tat_chunks, orig_len, ok=True):
+        if not self.log:
+            return
+        filepath = self.out_dir + "hh_tat_chunks"
+        if not ok:
+            filepath += "_excluded"
+        write_type = "a"
+        prepend = ""
+        if filepath not in self.files:
+            write_type = "w"
+            self.files.append(filepath)
+        else:
+            prepend = "\n\n"
+        file1 = open(filepath, write_type)
+        file1.write(f"{prepend}HH: {hh}\n")
+        for i, chunk in enumerate(tat_chunks):
+            if i < orig_len:
+                file1.write(f"\t - {str(chunk)}\n")
+            else:
+                file1.write(f"\t + {str(chunk)}\n")
+        file1.close()
+
+    def append_hh_gha(self, hh, gha_chunks, citations, ok=True):
         if not self.log:
             return
         filepath = self.out_dir + "hh_gha_chunks"
+        if not ok:
+            filepath += "_excluded"
         write_type = "a"
         prepend = ""
         if filepath not in self.files:
@@ -120,11 +147,14 @@ class OutputWriter():
         file1.write(f"Selected relevant chunks: " + str(citations))
         file1.close()
 
-    def append_final_cmp(self, hh, gha_cmp, tat_cmp, final):
+    def append_final_cmp(self, hh, gha_cmp, tat_cmp, final, ok=True):
         if not self.log:
             return
         filepath1 = self.out_dir + "hh_gha_tat_cmp"
         filepath2 = self.out_dir + "final.md"
+        if not ok:
+            filepath1 += "_excluded"
+            filepath2 = self.out_dir + "final_excluded.md"
         write_type = "a"
         prepend1 = ""
         prepend2 = ""
@@ -143,10 +173,35 @@ class OutputWriter():
         file1.write(f"\t - From TAT: {tat_cmp}\n")
         file1.close()
 
-    def log_analysis_doc(self, hh="", result="", gha=None, tat=None, cite=False):
+    def log_final_code(self, hh, result, gha_result, tat_result, gha, tat, orig_len, ok=True):
+        if not self.log:
+            return
+        filepath1 = self.out_dir + "hh_sources.csv"
+        filepath2 = self.out_dir + "hh_final.csv"
+        if filepath2 not in self.files:
+            self.files.append(filepath2)
+            file1 = open(filepath1, "w")
+            file2 = open(filepath2, "w")
+            file1.write("hh,gha,tat_orig,tat_extra,ok\n")
+            file2.write("hh,result,gha,tat,ok\n")
+            file1.close()
+            file2.close()
+
+        with open(filepath2, 'a', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow([hh, result, gha_result, tat_result, ok])
+
+        with open(filepath1, 'a', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow([hh, gha, tat[:orig_len], tat[orig_len:], ok])
+
+
+    def log_analysis_doc(self, hh="", result="", gha=None, tat=None, cite=False, ok=True):
         if not self.log:
             return
         filepath = self.out_dir + "analysis_full.md"
+        if not ok:
+            filepath = self.out_dir + "analysis_full_excluded.md"
         write_type = "a"
         title = ""
         if filepath not in self.files:
@@ -155,6 +210,7 @@ class OutputWriter():
             title = self.topic
 
         file = open(filepath, write_type)
+
         if title:
             file.write("# " + title + "\n\n")
 
@@ -223,10 +279,17 @@ class OutputWriter():
             json.dump(param, f)
             f.close()
             
+    def end_task(self):
+        for file in self.close_files:
+            f = open(file, "a")
+            f.write("}\n")
+            f.close()
+            
     def write_embeds(self, embeds, embed_name):
         if not self.log:
             return
         np.save(self.out_dir + embed_name + "_embeds", embeds)
+
 
 class GPTQuery:
     def __init__(self, model="gpt-4o"):
