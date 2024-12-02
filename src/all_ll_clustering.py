@@ -3,10 +3,10 @@ from sentence_transformers import SentenceTransformer
 import umap
 import hdbscan
 import pandas as pd
-import torch
+import matplotlib.pyplot as plt
 import numpy as np
 import os
-
+from tqdm import tqdm
 from utils import *
 
 
@@ -16,9 +16,9 @@ batch_size = 32
 
 # https://umap-learn.readthedocs.io/en/latest/parameters.html
 umap_params = {
-    'n_neighbors': 50,
-    'min_dist': 0.4,
-    'n_components': 50,  # final reduced dimensionality
+    'n_neighbors': 15,
+    'min_dist': 0.0,
+    'n_components': 10,  # final reduced dimensionality
     'metric': 'euclidean',
     'random_state': 42,
 }
@@ -27,7 +27,6 @@ umap_params = {
 hdbscan_params = {
     'min_cluster_size': 15,
     'min_samples': 1,
-    'cluster_selection_epsilon': 0.3,
     'approx_min_span_tree': True,  # faster, but use False for more accuracy
     'cluster_selection_method': 'leaf',
     'allow_single_cluster': True,
@@ -52,12 +51,11 @@ def create_embeddings(all_ll_list):
         print("loading pre-computed embeddings")
         return np.load(embed_save_path + ".npy")
     all_embeddings = None
-    for i in range(0, len(all_ll_list), batch_size):
+    for i in tqdm(range(0, len(all_ll_list), batch_size)):
         batch = all_ll_list[i:i + batch_size]
         embeddings = sentence_embed_model.encode(batch)
         all_embeddings = concat(all_embeddings, embeddings)
-        np.save(embed_save_path, all_embeddings)
-        print(f"step {i}: saved embeddings to " + embed_save_path)
+    np.save(embed_save_path, all_embeddings)
     return all_embeddings
 
 
@@ -111,6 +109,11 @@ def score_clusters(clusters, prob_threshold=0.05):
     unclustered = all_occurrences[-1]
     clean_series = series_numbers[series_numbers != -1]
     occurrences = clean_series.value_counts()
+    plt.hist(occurrences.values, bins = 40)
+    plt.xlabel("Cluster Size")
+    plt.ylabel("Frequency")
+    plt.title("Cluster size distribution")
+    plt.savefig(f'../out/{run_name}/cluster_size_distribution.png')
     count_cluster_too_large = len(occurrences[occurrences > 20])
     if unclustered > 5000:
         penalty += (0.15 * unclustered//5000)
@@ -121,6 +124,7 @@ def score_clusters(clusters, prob_threshold=0.05):
     print("Unclustered occurrences", all_occurrences[-1])
     print("Total clusters:", label_count)
     print("Cluster size > 20: ", occurrences[occurrences > 20].index.tolist())
+    print("Biggest Cluster Size", occurrences.max())
     print("Total cost:", cost + penalty)
     print()
 
@@ -147,7 +151,9 @@ def run(write_obj, umap_params, hdbscan_params, custom_saved_path="", score_clus
 
     if score_cluster:
         print("writing clusters")
-        write_obj.write_cluster(clusters[1:], all_ll_list[1:])  # Remove first elem since it's "Found low level hypotheses:"
+        clusters.labels_ = clusters.labels_[1:]
+        clusters.probabilities_ = clusters.probabilities_[1:]
+        write_obj.write_cluster(clusters, all_ll_list[1:])  # Remove first elem since it's "Found low level hypotheses:"
 
         score_clusters(clusters)
 
@@ -155,11 +161,10 @@ def run(write_obj, umap_params, hdbscan_params, custom_saved_path="", score_clus
 
 
 def get_clustered_lls():
-    run_name = "cluster_v1_full"
     print("Gathering pre-computed clusters from run " + run_name)
     write_obj = OutputWriter(run_name, log=False)
 
-    clusters, all_lls = run(write_obj, umap_params, hdbscan_params, score_cluster=False)
+    clusters, all_lls = run(write_obj, umap_params, hdbscan_params, score_cluster=True)
     clusters_list = list(zip(clusters.labels_, clusters.probabilities_))
 
     final_result = {}
