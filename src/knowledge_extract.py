@@ -67,7 +67,6 @@ def low_level_citations_all(ll_citation_path):
 
 
 def extract_hypotheses_from_cluster_generator(cluster_map_path, low_level_citation, write_obj):
-    all_hh_mappings = {}
     with open(cluster_map_path, 'r') as f:
         ll_clusters = json.load(f)
     # all_hypotheses = load_ll()[1:]

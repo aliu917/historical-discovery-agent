@@ -78,6 +78,9 @@ List of claims:
 Response:
 British rule led to widespread poverty in India by systematically extracting its resources and labor.
 
+If the list of claims do not include any information about Africa, please include a tag "[not african]" before the response. If the claim is relevant to Africa, do not include any additional tags or explanations, simply retun the single sentence claim statement.
+Make sure the response is concise and efficiently communicates the core ideas of all hypotheses without including superfluous words.
+
 List of claims:
 {response_list_str}
 Response:
@@ -156,6 +159,26 @@ def HH_COMBINE_PROMPT(hh_claim, gha_details, tat_details):
 From the General History of Africa, we observe the following related to the claim: {gha_details}.\n
 From The African Times, we observe the following related to the claim: {tat_details}.\n
 Combine the two observations into a coherent paragraph without losing any relevant details from either source."""
+
+
+def HH_TOPIC(hh_claim, topics):
+    topics_formatted = ""
+    for k, v in topics.items():
+        topics_formatted += f'- "{k}": {v}\n'
+    return f"""For the following statement, determine which topic it is most likely to fall into. 
+The available topic choices are listed in quotation marks with a corresponding high-level topic area question description in the format of "<topic name>": <question describing the topic>
+Here is an example:
+Topics:
+- "fruits": Does the text discuss foods that grow on plants, have seeds, and are sweet?
+- "vegetables": Does the text discuss foods that grow on plants and are not sweet?
+- "dairy": Does the text discuss foods that originate from milk based products?
+Statement: Cauliflower rice is perceived as a healthy alternative to rice.
+Response: vegetables
+
+Make sure to return the response as a single topic listed from the topic names within quotes above. Do not include any additional explanation, simply return the topic name.
+Topics:
+{topics_formatted}Statement: {hh_claim}
+Response: """
 
 if __name__ == '__main__':
     # print(GENERALIZE_HIGH_LEVEL_HYPOTHESES(["note1", "note2", "note3"]))
