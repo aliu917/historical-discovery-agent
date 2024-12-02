@@ -160,6 +160,26 @@ From the General History of Africa, we observe the following related to the clai
 From The African Times, we observe the following related to the claim: {tat_details}.\n
 Combine the two observations into a coherent paragraph without losing any relevant details from either source."""
 
+
+def HH_TOPIC(hh_claim, topics):
+    topics_formatted = ""
+    for k, v in topics.items():
+        topics_formatted += f'- "{k}": {v}\n'
+    return f"""For the following statement, determine which topic it is most likely to fall into. 
+The available topic choices are listed in quotation marks with a corresponding high-level topic area question description in the format of "<topic name>": <question describing the topic>
+Here is an example:
+Topics:
+- "fruits": Does the text discuss foods that grow on plants, have seeds, and are sweet?
+- "vegetables": Does the text discuss foods that grow on plants and are not sweet?
+- "dairy": Does the text discuss foods that originate from milk based products?
+Statement: Cauliflower rice is perceived as a healthy alternative to rice.
+Response: vegetables
+
+Make sure to return the response as a single topic listed from the topic names within quotes above. Do not include any additional explanation, simply return the topic name.
+Topics:
+{topics_formatted}Statement: {hh_claim}
+Response: """
+
 if __name__ == '__main__':
     # print(GENERALIZE_HIGH_LEVEL_HYPOTHESES(["note1", "note2", "note3"]))
     # print(FIND_COMPARE_PROMPT("silk road", ["The silk road was hot", "The silk road had many bandits"], "The Silk Road facilitated significant cultural exchanges between different civilizations.", "similarities"))
