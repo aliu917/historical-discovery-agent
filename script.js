@@ -1,7 +1,7 @@
 // import Papa from 'papaparse';
 
 function loadButtons() {
-    fetch("../out/v2_cluster_single_final/overall/topic1.json")
+    fetch("out/v2_cluster_single_final/overall/topic1.json")
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
@@ -22,7 +22,7 @@ function loadButtons() {
 };
 
 function makeNewButtons(topic1) {
-    fetch("../out/v2_cluster_single_final/overall/topic2.json")
+    fetch("out/v2_cluster_single_final/overall/topic2.json")
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
@@ -68,7 +68,7 @@ function convert_filename(name) {
 }
 
 function load_results(topic1, topic2) {
-    fetch("../out/v2_cluster_single_final/csv_out/" + convert_filename(topic1) + "/" + convert_filename(topic2) + ".csv")
+    fetch("out/v2_cluster_single_final/csv_out/" + convert_filename(topic1) + "/" + convert_filename(topic2) + ".csv")
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
