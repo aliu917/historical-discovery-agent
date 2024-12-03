@@ -45,7 +45,7 @@ def EXTRACT_COMMON_CLAIMS(response_list):
     response_list_str = "\n".join(response_list)
     return f"""For the following list of detailed claims deduced from a primary source text, you'll see many claims are similar or identical. Identify the repeated claims.
 A hypothesis or claim should be a statement that may be argued for or against given evidence. Choose hypotheses that an amateur historian studying the history of Africa would find interesting or novel.
-If a claim is not repeated in the input, do not include it. However please include at least 1 claim.
+If a claim is not repeated in the input, do not include it.
 Here is an example:
 List of claims: 
 [id: 0] The British Rule in India impoverished the country by exploiting its resources and labor
@@ -77,6 +77,9 @@ List of claims:
 [id: 5] As a result of the exploitation of their land, many Indians fell into poverty and had to seek demeaning employment under the British.
 Response:
 British rule led to widespread poverty in India by systematically extracting its resources and labor.
+
+If the list of claims do not include any information about Africa, please include a tag "[not african]" before the response. If the claim is relevant to Africa, do not include any additional tags or explanations, simply retun the single sentence claim statement.
+Make sure the response is concise and efficiently communicates the core ideas of all hypotheses without including superfluous words.
 
 List of claims:
 {response_list_str}
@@ -160,9 +163,35 @@ Combine the two observations into a coherent paragraph without losing any releva
 def SLAVERY_ANALYSIS_PROMPT(ll_claims):
     return f"""Of the following claims, some are related to slavery. Summarize the different perspectives on slavery, and group by region that the claim is referring to. Do not summarize or group the claims that are unrelated to slavery.
 
+    {ll_claims}
+"""
+
+def HH_TOPIC(hh_claim, topics):
+    topics_formatted = ""
+    for k, v in topics.items():
+        topics_formatted += f'- "{k}": {v}\n'
+    return f"""For the following statement, determine which topic it is most likely to fall into. 
+The available topic choices are listed in quotation marks with a corresponding high-level topic area question description in the format of "<topic name>": <question describing the topic>
+Here is an example:
+Topics:
+- "fruits": Does the text discuss foods that grow on plants, have seeds, and are sweet?
+- "vegetables": Does the text discuss foods that grow on plants and are not sweet?
+- "dairy": Does the text discuss foods that originate from milk based products?
+Statement: Cauliflower rice is perceived as a healthy alternative to rice.
+Response: vegetables
+
+Make sure to return the response as a single topic listed from the topic names within quotes above. Do not include any additional explanation, simply return the topic name.
+Topics:
+{topics_formatted}Statement: {hh_claim}
+Response: """
+
+def SLAVERY_ANALYSIS_PROMPT(ll_claims):
+    return f"""Of the following claims, some are related to slavery. Summarize the different perspectives on slavery, and group by region that the claim is referring to. Do not summarize or group the claims that are unrelated to slavery.
+
 
     {ll_claims}
 """
+
 if __name__ == '__main__':
     # print(GENERALIZE_HIGH_LEVEL_HYPOTHESES(["note1", "note2", "note3"]))
     # print(FIND_COMPARE_PROMPT("silk road", ["The silk road was hot", "The silk road had many bandits"], "The Silk Road facilitated significant cultural exchanges between different civilizations.", "similarities"))
