@@ -3,6 +3,7 @@ from prompts import *
 from knowledge_extract import extract_hypotheses_generator, extract_hypotheses_from_cluster_generator, low_level_citations_all
 from utils import *
 import re
+from tqdm import tqdm
 
 gpt_obj = GPTQuery()
 
@@ -67,7 +68,7 @@ def find_compare_texts(topic : str = "", run_name : str = "run1", log_outputs : 
         h_generator = extract_hypotheses_from_cluster_generator(cluster_map_path, low_level_citation, write_obj)
 
     print("Extracting from GHA and comparing output")
-    for hh_claim, ll_ids, low_level_citation in h_generator:
+    for hh_claim, ll_ids, low_level_citation in tqdm(h_generator):
         query = hh_claim
         query, ok = check_query(query)
         result_chunks = gha_request(query, requery=True, gpt_obj=gpt_obj)[0]['results'][:20]
@@ -104,7 +105,7 @@ def find_compare_texts(topic : str = "", run_name : str = "run1", log_outputs : 
     write_obj.end_task()
 
 if __name__ == '__main__':
-    run_name = "v2_cluster_single_final"
+    run_name = "v2_cluster_multiple_hh_yield"
     assert_run_path(run_name)
 
     # query_topics = [
@@ -119,5 +120,5 @@ if __name__ == '__main__':
                        run_name=run_name,
                        log_outputs=True,
                        short_cite=False,
-                       cluster_map_path="../out/cluster_v1_full/final_cluster_map.json",
+                       cluster_map_path="../out/cluster_v2_attempt_bigger_clusters/final_cluster_map.json",
                        ll_citation_path="../tat/tat_ll_map.jsonl")

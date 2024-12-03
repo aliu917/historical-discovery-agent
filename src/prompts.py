@@ -45,7 +45,7 @@ def EXTRACT_COMMON_CLAIMS(response_list):
     response_list_str = "\n".join(response_list)
     return f"""For the following list of detailed claims deduced from a primary source text, you'll see many claims are similar or identical. Identify the repeated claims.
 A hypothesis or claim should be a statement that may be argued for or against given evidence. Choose hypotheses that an amateur historian studying the history of Africa would find interesting or novel.
-If a claim is not repeated in the input, do not include it. However please include at least 1 claim.
+If a claim is not repeated in the input, do not include it.
 Here is an example:
 List of claims: 
 [id: 0] The British Rule in India impoverished the country by exploiting its resources and labor
