@@ -12,7 +12,7 @@ function loadButtons() {
             var button1_container = document.getElementById("t1-button-container");
             buttons_html = "";
             for (let key in data) {
-                buttons_html += "<a href=\"#\" class=\"topic-button\" onclick=\"select_t1(this, '" + key + "')\">" + key + "</a>\n";
+                buttons_html += "<a class=\"topic-button\" onclick=\"select_t1(this, '" + key + "')\">" + key + "</a>\n";
             }
             button1_container.innerHTML = buttons_html;
         })
@@ -50,12 +50,12 @@ function makeNewButtons(topic1) {
 };
 
 function select_t1(button, topic1) {
+
+    div = document.getElementById("results");
+    div.innerHTML = "";
+
     const container = button.parentElement;
     container.querySelectorAll('.topic-button').forEach(btn => btn.classList.remove('active'));
-
-    const results = document.getElementById("results")
-    results.innerHTML = ""
-
     button.classList.add('active');
     makeNewButtons(topic1);
 };
@@ -107,6 +107,8 @@ function load_results(topic1, topic2) {
             console.log(parsedData.data);
 
             container = document.getElementById("results");
+            container.style.minHeight = `${container.offsetHeight}px`;
+            container.innerHTML = "";
 
             const result_title = document.createElement('p')
             result_title.innerText = "Results:"
@@ -114,7 +116,7 @@ function load_results(topic1, topic2) {
             container.appendChild(result_title)
 
             parsedData.data.forEach(entry => {
-                if (!entry) return;
+                if (Object.keys(entry).length < 3) return;
 
                 const div = document.createElement('div');
                 div.classList.add("subcontainer");
@@ -159,6 +161,7 @@ function load_results(topic1, topic2) {
                 });
 
                 container.appendChild(div);
+                container.style.minHeight = '0px'
             });
         }).catch(error => {
             console.error('There was a problem with the fetch operation:', error);
