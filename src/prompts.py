@@ -160,6 +160,11 @@ From the General History of Africa, we observe the following related to the clai
 From The African Times, we observe the following related to the claim: {tat_details}.\n
 Combine the two observations into a coherent paragraph without losing any relevant details from either source."""
 
+def SLAVERY_ANALYSIS_PROMPT(ll_claims):
+    return f"""Of the following claims, some are related to slavery. Summarize the different perspectives on slavery, and group by region that the claim is referring to. Do not summarize or group the claims that are unrelated to slavery.
+
+    {ll_claims}
+"""
 
 def HH_TOPIC(hh_claim, topics):
     topics_formatted = ""
@@ -179,6 +184,13 @@ Make sure to return the response as a single topic listed from the topic names w
 Topics:
 {topics_formatted}Statement: {hh_claim}
 Response: """
+
+def SLAVERY_ANALYSIS_PROMPT(ll_claims):
+    return f"""Of the following claims, some are related to slavery. Summarize the different perspectives on slavery, and group by region that the claim is referring to. Do not summarize or group the claims that are unrelated to slavery.
+
+
+    {ll_claims}
+"""
 
 if __name__ == '__main__':
     # print(GENERALIZE_HIGH_LEVEL_HYPOTHESES(["note1", "note2", "note3"]))
