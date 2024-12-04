@@ -37,7 +37,7 @@ function makeNewButtons(topic1) {
                 if (key === topic1) {
                     t2_data = data[key];
                     for (let t2key in t2_data) {
-                        t2_html += "<a href=\"#\" class=\"topic-button\" onclick=\"select_t2(this, '" + key + "', '" + t2key + "')\">" + t2key + "</a>\n";
+                        t2_html += "<a class=\"topic-button\" onclick=\"select_t2(this, '" + key + "', '" + t2key + "')\">" + t2key + "</a>\n";
                     }
                 }
             }
@@ -52,6 +52,10 @@ function makeNewButtons(topic1) {
 function select_t1(button, topic1) {
     const container = button.parentElement;
     container.querySelectorAll('.topic-button').forEach(btn => btn.classList.remove('active'));
+
+    const results = document.getElementById("results")
+    results.innerHTML = ""
+
     button.classList.add('active');
     makeNewButtons(topic1);
 };
@@ -104,32 +108,53 @@ function load_results(topic1, topic2) {
 
             container = document.getElementById("results");
 
+            const result_title = document.createElement('p')
+            result_title.innerText = "Results:"
+            result_title.classList.add("subtitle")
+            container.appendChild(result_title)
+
             parsedData.data.forEach(entry => {
+                if (!entry) return;
+
                 const div = document.createElement('div');
                 div.classList.add("subcontainer");
 
                 // Title
                 const title = document.createElement('h2');
                 title.innerText = entry.hh;
+                div.appendChild(title);
 
                 // Main content
-                const mainContent = document.createElement('p');
-                mainContent.innerText = entry.result;
+                // const mainContent = document.createElement('p');
+                // mainContent.innerText = entry.result;
+                const {button, divContent} = createCollapsible("Comparison Result", entry.result + "<br />")
+                const compareContent = divContent
+                button.classList.add('comparison-result')
 
-                div.appendChild(title);
-                div.appendChild(mainContent);
+                div.appendChild(button);
+                div.appendChild(divContent);
+
+                const mainContent = document.createElement('p');
+                mainContent.classList.add('source-text')
+                mainContent.innerText = "The African Times sources:";
+                compareContent.appendChild(mainContent);
 
                 // Collapsible items
                 ['tat_orig'].forEach(key => {
                     const items = entry[key];
                     if (!items) return
                     items.forEach(item => {
+                        date_str = ''
+                        date = item['issue_date'] || item['last_edit_date']
+                        if (date) {
+                            date_str += "[" + date.slice(-4) + "] "
+                        }
                         const {
                             button,
                             divContent
-                        } = createCollapsible(item.document_title || item.article_title, item.content || '');
-                        div.appendChild(button);
-                        div.appendChild(divContent);
+                        } = createCollapsible(date_str + (item.document_title || item.article_title), item.content || '');
+                        compareContent.appendChild(button);
+                        compareContent.appendChild(divContent);
                     });
                 });
 
