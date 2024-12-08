@@ -12,7 +12,7 @@ function loadButtons() {
             var button1_container = document.getElementById("t1-button-container");
             buttons_html = "";
             for (let key in data) {
-                buttons_html += "<a href=\"#\" class=\"topic-button\" onclick=\"select_t1(this, '" + key + "')\">" + key + "</a>\n";
+                buttons_html += "<a class=\"topic-button\" onclick=\"select_t1(this, '" + key + "')\">" + key + "</a>\n";
             }
             button1_container.innerHTML = buttons_html;
         })
@@ -37,7 +37,7 @@ function makeNewButtons(topic1) {
                 if (key === topic1) {
                     t2_data = data[key];
                     for (let t2key in t2_data) {
-                        t2_html += "<a href=\"#\" class=\"topic-button\" onclick=\"select_t2(this, '" + key + "', '" + t2key + "')\">" + t2key + "</a>\n";
+                        t2_html += "<a class=\"topic-button\" onclick=\"select_t2(this, '" + key + "', '" + t2key + "')\">" + t2key + "</a>\n";
                     }
                 }
             }
@@ -50,6 +50,10 @@ function makeNewButtons(topic1) {
 };
 
 function select_t1(button, topic1) {
+
+    div = document.getElementById("results");
+    div.innerHTML = "";
+
     const container = button.parentElement;
     container.querySelectorAll('.topic-button').forEach(btn => btn.classList.remove('active'));
     button.classList.add('active');
@@ -103,37 +107,61 @@ function load_results(topic1, topic2) {
             console.log(parsedData.data);
 
             container = document.getElementById("results");
+            container.style.minHeight = `${container.offsetHeight}px`;
+            container.innerHTML = "";
+
+            const result_title = document.createElement('p')
+            result_title.innerText = "Results:"
+            result_title.classList.add("subtitle")
+            container.appendChild(result_title)
 
             parsedData.data.forEach(entry => {
+                if (Object.keys(entry).length < 3) return;
+
                 const div = document.createElement('div');
                 div.classList.add("subcontainer");
 
                 // Title
                 const title = document.createElement('h2');
                 title.innerText = entry.hh;
+                div.appendChild(title);
 
                 // Main content
-                const mainContent = document.createElement('p');
-                mainContent.innerText = entry.result;
+                // const mainContent = document.createElement('p');
+                // mainContent.innerText = entry.result;
+                const {button, divContent} = createCollapsible("Comparison Result", entry.result + "<br />")
+                const compareContent = divContent
+                button.classList.add('comparison-result')
 
-                div.appendChild(title);
-                div.appendChild(mainContent);
+                div.appendChild(button);
+                div.appendChild(divContent);
+
+                const mainContent = document.createElement('p');
+                mainContent.classList.add('source-text')
+                mainContent.innerText = "The African Times sources:";
+                compareContent.appendChild(mainContent);
 
                 // Collapsible items
                 ['tat_orig'].forEach(key => {
                     const items = entry[key];
                     if (!items) return
                     items.forEach(item => {
+                        date_str = ''
+                        date = item['issue_date'] || item['last_edit_date']
+                        if (date) {
+                            date_str += "[" + date.slice(-4) + "] "
+                        }
                         const {
                             button,
                             divContent
-                        } = createCollapsible(item.document_title || item.article_title, item.content || '');
-                        div.appendChild(button);
-                        div.appendChild(divContent);
+                        } = createCollapsible(date_str + (item.document_title || item.article_title), item.content || '');
+                        compareContent.appendChild(button);
+                        compareContent.appendChild(divContent);
                     });
                 });
 
                 container.appendChild(div);
+                container.style.minHeight = '0px'
             });
         }).catch(error => {
             console.error('There was a problem with the fetch operation:', error);
