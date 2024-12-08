@@ -108,14 +108,6 @@ if __name__ == '__main__':
     run_name = "v2_cluster_multiple_hh_yield"
     assert_run_path(run_name)
 
-    # query_topics = [
-    #     "role of alcohol in Africa",
-    #     "proponents of formation of Israel",
-    #     "history of Kumasi",
-    #     "Fanti confederation",
-    # ]
-    # for query in query_topics:
-    #     find_compare_texts(query, log_outputs=True, short_cite=False)
     find_compare_texts("",
                        run_name=run_name,
                        log_outputs=True,
