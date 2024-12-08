@@ -28,12 +28,12 @@ def colonization_mentions():
             year_to_mentions[int(year)] += 1
     
     plt.bar(year_to_mentions.keys(), year_to_mentions.values())
-    plt.title("Mentions of Colonialism in The African Times")
+    plt.title("Mentions of Colonialism in The African Times hypotheses")
     plt.savefig('../out/sanity_checks/colonialism.png', dpi=640)
 
 def israel_mentions():
     year_to_mentions = defaultdict(int)
-    use = 'chunk' # ll
+    use = 'll'
     for ll_h in tqdm(read_jsonl('../tat/tat_ll_map.jsonl')):
         if 'israel' in ll_h[use].lower():
             year = get_date(ll_h).split('_')[-1]
@@ -41,7 +41,7 @@ def israel_mentions():
     
     plt.clf()
     plt.bar(year_to_mentions.keys(), year_to_mentions.values())
-    plt.title("Mentions of Israel in The African Times")
+    plt.title("Mentions of Israel in The African Times hypotheses")
     plt.savefig('../out/sanity_checks/israel.png', dpi=640)
 
 def slavery_mentions():
