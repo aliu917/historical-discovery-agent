@@ -4,6 +4,7 @@ from knowledge_extract import extract_hypotheses_generator, extract_hypotheses_f
 from utils import *
 import re
 from tqdm import tqdm
+import argparse
 
 gpt_obj = GPTQuery()
 
@@ -26,10 +27,15 @@ def get_tat_chunks(low_level_citation, ll_ids, query=""):
     tat_chunks = []
     chunk_set = set()
     for ll_id in ll_ids:
-        chunk_str = low_level_citation[ll_id]["content_string"]
+        ll_citation = low_level_citation[ll_id]
+        if "content_string" in ll_citation:
+            chunk_str = ll_citation["content_string"]
+        else:
+            chunk_str = ll_citation["content"]
         if chunk_str in chunk_set:
             continue
-        low_level_citation[ll_id]["content"] = low_level_citation[ll_id].pop("content_string")
+        if "content_string" in ll_citation:
+            low_level_citation[ll_id]["content"] = low_level_citation[ll_id].pop("content_string")
         tat_chunks.append(low_level_citation[ll_id])
         chunk_set.add(chunk_str)
 
@@ -49,6 +55,7 @@ def extract_citations(text):
     pattern = r'\[(\d+)\]'
     numbers = re.findall(pattern, text)
     return [int(num) for num in numbers]
+
 
 """
 Compare the different perspectives between The African Times (TAT) and General History of Africa (GHA) on `topic`
@@ -104,13 +111,26 @@ def find_compare_texts(topic : str = "", run_name : str = "run1", log_outputs : 
     print()
     write_obj.end_task()
 
+
 if __name__ == '__main__':
-    run_name = "v2_cluster_multiple_hh_yield"
+    parser = argparse.ArgumentParser(description="OCR script input.")
+    parser.add_argument('-r', '--run_name', type=str, required=True,
+                        help='The name of the run, which will define the output path where logged results are saved.')
+    parser.add_argument('-c', '--cluster_map_path', type=str, default='../out/cluster_v2_attempt_bigger_clusters/final_cluster_map.json',
+                        help='The path to the pre-computed low-level claim clusters.')
+    parser.add_argument('-l', '--ll_map_path', type=str,
+                        default='../tat/tat_ll_map.jsonl',
+                        help='The path to the pre-computed low-level claims and chunk sources.')
+    parser.add_argument('-t', '--seed_topic', type=str, default="",
+                        help='A topic string to focus high-level claim and comparison on')
+    args = parser.parse_args()
+
+    run_name = args.run_name
     assert_run_path(run_name)
 
-    find_compare_texts("",
+    find_compare_texts(args.seed_topic,
                        run_name=run_name,
                        log_outputs=True,
                        short_cite=False,
-                       cluster_map_path="../out/cluster_v2_attempt_bigger_clusters/final_cluster_map.json",
-                       ll_citation_path="../tat/tat_ll_map.jsonl")
+                       cluster_map_path=args.cluster_map_path,
+                       ll_citation_path=args.ll_map_path)

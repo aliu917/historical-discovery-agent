@@ -1,44 +1,43 @@
-# from genie_search import african_times_request
-# from prompts import *
-# from knowledge_extract import clean_list_hypotheses
-# from utils import *
+from genie_search import african_times_request
+from prompts import *
+from knowledge_extract import clean_list_hypotheses
+from utils import *
 import ast
 import re
 import json
 from collections import OrderedDict
+import argparse
+
+gpt_obj = GPTQuery()
 
 
-# gpt_obj = GPTQuery()
+def extract_all_tat(write_obj, source):
+    low_level_citation = {}
+    all_ll = []
 
+    id = 0
 
-
-# def extract_all_tat(write_obj):
-#     low_level_citation = {}
-#     all_ll = []
-#
-#     id = 0
-#
-#     for chunk in read_jsonl("../tat/the_african_times_articles.jsonl"):
-#         prompt = EXTRACT_HYPOTHESES_FROM_CHUNK(chunk['content_string'])
-#         response = gpt_obj.query(prompt)
-#         response = clean_list_hypotheses(response)
-#         write_obj.append_extract(chunk=chunk, ll=response)
-#         chunk_ll = []
-#         for k in range(len(response)):
-#             ll = response[k]
-#             if not len(ll):
-#                 continue
-#             low_level_citation[len(all_ll)] = chunk
-#             od = OrderedDict([
-#                 ("id", id),
-#                 ("ll", line[:-1]),
-#                 ("chunk", chunk)
-#             ])
-#             chunk_ll.append(json.dumps(od))
-#             id += 1
-#             all_ll.append(ll)
-#         write_obj.append_extract(filename="tat_ll_map", ll=chunk_ll)
-#     write_obj.append_extract(filename="tat_ll", ll=all_ll)
+    for chunk in read_jsonl(source):
+        prompt = EXTRACT_HYPOTHESES_FROM_CHUNK(chunk['content_string'])
+        response = gpt_obj.query(prompt)
+        response = clean_list_hypotheses(response)
+        write_obj.append_extract(chunk=chunk, ll=response)
+        chunk_ll = []
+        for k in range(len(response)):
+            ll = response[k]
+            if not len(ll):
+                continue
+            low_level_citation[len(all_ll)] = chunk
+            od = OrderedDict([
+                ("id", id),
+                ("ll", ll[:-1]),
+                ("chunk", chunk)
+            ])
+            chunk_ll.append(json.dumps(od))
+            id += 1
+            all_ll.append(ll)
+        write_obj.append_extract(filename="tat_ll_map", ll=chunk_ll)
+    write_obj.append_extract(filename="tat_ll", ll=all_ll)
 
 
 def remap():
@@ -77,6 +76,11 @@ def remap():
 
 
 if __name__ == '__main__':
-    # write_obj = OutputWriter("topic_v1", "all", True)
-    # extract_all_tat(write_obj)
+    parser = argparse.ArgumentParser(description="OCR script input.")
+    parser.add_argument('-r', '--run_name', type=str, required=True, help='The name of the run, which will define the output path where logged results are saved.')
+    parser.add_argument('-p', '--primary_source', type=str, default='../tat/the_african_times_articles.jsonl', help='The name of the run, which will define the output path where logged results are saved.')
+    args = parser.parse_args()
+
+    write_obj = OutputWriter(args.run_name, log=True)
+    extract_all_tat(write_obj, args.primary_source)
     remap()

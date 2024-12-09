@@ -2,72 +2,9 @@
 jsonl format:
 {"id": "integer", "content": "string", "document_title": "string", "full_section_title": "string"}
 - id: counter
-- content: chunk text content to <= 500 tokens with https://python.langchain.com/v0.1/docs/modules/data_connection/document_transformers/
+- content: chunk text content limited to <= 500 tokens with https://python.langchain.com/v0.1/docs/modules/data_connection/document_transformers/
 - document_title: chapter title
 - full_section_title: chapter title > section title > subsection title > ...
-
-
-Some notes from observing the jsons:
-- document_title: taken from first text. We are manually extracting from one chapter at a time, so this becomes trivial.
-
-- full_section_title: For the most part, these should be in the "section_header" labeled elements. However,
-                      it doesn't seem like the json parse is very good at finding subsections. Ex: "Senegambia"
-                      is a subsection of "Conquest and reaction in French West Africa ..." but they are both labeled
-                      "section_header." Currently thinking a hacky method of getting this would be to use the "prov"
-                      and roughly measure the text height (if a section is at least 1 pt smaller than another section
-                      header, then it is a subsection or something). Tested this and I think the diff is enough to tell:
-
-                      ** Senegambia:
-                      "prov": [
-                        {
-                          "page_no": 4,
-                          "bbox": {
-                            "l": 39.72174835205078,
-                            "t": 177.33309936523438,
-                            "r": 98.95807647705078,
-                            "b": 164.8936767578125,
-                            "coord_origin": "BOTTOMLEFT"
-                          },
-                          "charspan": [
-                            0,
-                            10
-                          ]
-                        }
-                      ]
-
-                      ** Conquest and reaction in French West Africa ...
-                      "prov": [
-                        {
-                          "page_no": 4,
-                          "bbox": {
-                            "l": 40.32535171508789,
-                            "t": 479.55426025390625,
-                            "r": 371.5114440917969,
-                            "b": 464.8079833984375,
-                            "coord_origin": "BOTTOMLEFT"
-                          },
-                          "charspan": [
-                            0,
-                            54
-                          ]
-                        }
-                      ]
-
-                    In each bbox, subtract t - b:
-
-                    Conquest and reaction in French West Africa ...
-                      479.55426025390625 - 464.8079833984375 = 14.74627685546875
-
-                    Senegambia:
-                      177.33309936523438 - 164.8936767578125 = 12.439422607421875
-
-                    Also confirmed "Tukulor empire" (another subsection of Conquest and reaction in French West Africa):
-                      323.73651123046875 - 311.451171875 = 12.28533935546875
-
-                    >> was hacky. Had to fix some things but the final version works. See end for printed outline.
-
-- content: not in scope for this file.
-
 """
 from collections import OrderedDict
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -77,6 +14,7 @@ import json
 import os
 import re
 import tiktoken
+import argparse
 
 CHUNK = 500
 end_titles = "Members of the International Scientific Committee for the Drafting of a General History of Africa"
@@ -459,7 +397,7 @@ def process_data(filename):
         all_results = result.final_jsonl
         out_filename = filename
 
-    output_dir = Path("../gha_jsonl_small_chunk")
+    output_dir = Path("../gha_jsonl")
     output_dir.mkdir(parents=True, exist_ok=True)
     path = output_dir / out_filename.split("/")[-1].split(".")[0]
 
@@ -479,7 +417,12 @@ def process_data(filename):
 
 
 if __name__ == '__main__':
-    process_data("../gha_texts/africa6_all.json")
+    parser = argparse.ArgumentParser(description="Data pre-processing to JSONL format script input.")
+    parser.add_argument('-f', '--file', type=str, default="../gha_texts/africa6_all.json",
+                        help='The input filename (default: ./gha_texts/africa6_all.json)')
+    args = parser.parse_args()
+
+    process_data(args.file)
 
 '''
 Output: files and section structure

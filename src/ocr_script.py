@@ -6,6 +6,7 @@ from docling.document_converter import DocumentConverter, PdfFormatOption
 
 import json
 import os
+import argparse
 
 
 def pdf_convert(pdf_string):
@@ -40,16 +41,9 @@ def pdf_convert(pdf_string):
 
 
 if __name__ == '__main__':
-    # pdf_convert("../Angela Suhas Project Proposal.pdf")
-    # pdf_convert("../gha_raw_pdf/Africa7.pdf")
+    parser = argparse.ArgumentParser(description="OCR script input.")
+    parser.add_argument('-f', '--file', type=str, default="../gha_raw_pdf/africa7_all.pdf",
+                        help='The input filename (default: ../gha_raw_pdf/africa7_all.pdf)')
+    args = parser.parse_args()
 
-    # path = "../gha_raw_pdf/chapters"
-    # for filename in os.listdir(path):
-    #     if filename.split('.')[-1] != "pdf":
-    #         continue
-    #     file_path = os.path.join(path, filename)
-    #     print("converting ", str(file_path))
-    #     pdf_convert(str(file_path))
-
-    # for volume in ["../gha_raw_pdf/africa6_all.pdf", "../gha_raw_pdf/africa7_all.pdf"]:
-    pdf_convert("../gha_raw_pdf/chapters/africa7_10.pdf")
+    pdf_convert(args.file)

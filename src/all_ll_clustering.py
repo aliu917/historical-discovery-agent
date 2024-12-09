@@ -8,10 +8,11 @@ import numpy as np
 import os
 from tqdm import tqdm
 from utils import *
+import argparse
 
 
 sentence_embed_model = SentenceTransformer("all-mpnet-base-v2")
-embed_save_path = "../tat/sentence_embeddings"
+embed_save_path = ""
 batch_size = 32
 
 # https://umap-learn.readthedocs.io/en/latest/parameters.html
@@ -50,6 +51,8 @@ def create_embeddings(all_ll_list):
     if os.path.exists(embed_save_path + ".npy"):
         print("loading pre-computed embeddings")
         return np.load(embed_save_path + ".npy")
+
+    print("Start low-level embedding")
     all_embeddings = None
     for i in tqdm(range(0, len(all_ll_list), batch_size)):
         batch = all_ll_list[i:i + batch_size]
@@ -66,9 +69,9 @@ def load_ll():
     return text.split('\n')
 
 
-def get_dr_embeddings(embeddings, umap_params, saved_path):
+def get_dr_embeddings(embeddings, umap_params, saved_path, run_new_cluster):
     umap_path = saved_path + "umap_embeds.npy"
-    if os.path.exists(umap_path):
+    if os.path.exists(umap_path) and not run_new_cluster:
         print("loading pre-computed embeddings from " + umap_path)
         umap_embeds = np.load(umap_path)
         return umap_embeds
@@ -78,9 +81,9 @@ def get_dr_embeddings(embeddings, umap_params, saved_path):
     return umap_embeds
 
 
-def generate_clusters(umap_embeds, hdbscan_params, saved_path):
+def generate_clusters(umap_embeds, hdbscan_params, saved_path, run_new_cluster):
     cluster_label_path = saved_path + "cluster_labels.npy"
-    if os.path.exists(cluster_label_path):
+    if os.path.exists(cluster_label_path) and not run_new_cluster:
         print("loading pre-computed embeddings from " + cluster_label_path)
         clusters_labels = np.load(cluster_label_path)
         clusters_probs = np.load(saved_path + "cluster_probs.npy")
@@ -131,7 +134,7 @@ def score_clusters(clusters, prob_threshold=0.05):
     return cost + penalty
 
 
-def run(write_obj, umap_params, hdbscan_params, custom_saved_path="", score_cluster=True):
+def run(write_obj, umap_params, hdbscan_params, custom_saved_path="", score_cluster=True, run_new_cluster=False):
     all_ll_list = load_ll()
     print(f"loaded all {len(all_ll_list)} claims")
 
@@ -144,10 +147,10 @@ def run(write_obj, umap_params, hdbscan_params, custom_saved_path="", score_clus
     else:
         saved_path = write_obj.out_dir
 
-    umap_embeds = get_dr_embeddings(embeddings, umap_params, saved_path)
+    umap_embeds = get_dr_embeddings(embeddings, umap_params, saved_path, run_new_cluster)
     write_obj.write_embeds(umap_embeds, "umap")
 
-    clusters = generate_clusters(umap_embeds, hdbscan_params, saved_path)
+    clusters = generate_clusters(umap_embeds, hdbscan_params, saved_path, run_new_cluster)
 
     if score_cluster:
         print("writing clusters")
@@ -160,11 +163,9 @@ def run(write_obj, umap_params, hdbscan_params, custom_saved_path="", score_clus
     return clusters, all_ll_list
 
 
-def get_clustered_lls():
-    print("Gathering pre-computed clusters from run " + run_name)
-    write_obj = OutputWriter(run_name, log=False)
+def get_clustered_lls(write_obj, umap_params, hdbscan_params, custom_saved_path="", score_cluster=True, run_new_cluster=False):
 
-    clusters, all_lls = run(write_obj, umap_params, hdbscan_params, score_cluster=True)
+    clusters, all_lls = run(write_obj, umap_params, hdbscan_params, custom_saved_path, score_cluster, run_new_cluster)
     clusters_list = list(zip(clusters.labels_, clusters.probabilities_))
 
     final_result = {}
@@ -182,21 +183,28 @@ def get_clustered_lls():
 
 
 if __name__ == '__main__':
-    run_name = "cluster_v2_attempt_bigger_clusters"
-    run_new_cluster = False
+    parser = argparse.ArgumentParser(description="Low-level clustering input.")
+    parser.add_argument('-r', '--run_name', type=str, required=True,
+                        help='The name of the run, which will define the output path where logged results are saved.')
+    parser.add_argument('-e', '--embed_save_path', type=str, default="../tat/sentence_embeddings",
+                        help='A path to pre-computed sentence embeddings for each low-level claims or, if not available, where the computed embeddings will be saved.')
+    parser.add_argument('-s', '--custom_saved_path', type=str,
+                        help='Custom path to load or save the UMAP and HDBSCAN cluster results. If not provided, results will be loaded from or saved in out/run_name.')
+    parser.add_argument('-c', '--run_new_cluster', type=bool, default=False,
+                        help='Force running new clusters instead of loading pre-computed clusters.')
 
-    if run_new_cluster:
-        custom_saved_path = ""
-        assert_run_path(run_name)
+    args = parser.parse_args()
 
-        write_obj = OutputWriter(run_name, log=True)
+    run_name = args.run_name
+    embed_save_path = args.embed_save_path
+    custom_saved_path = args.custom_saved_path
+    run_new_cluster = args.run_new_cluster
 
-        run(write_obj, umap_params, hdbscan_params, custom_saved_path)
-    else:
-        result_map = get_clustered_lls()
-        f = open("../out/" + run_name + "/final_cluster_map.json", "w")
-        json.dump(result_map, f, indent=4)
-        f.close()
+    write_obj = OutputWriter(run_name, log=True)
+    result_map = get_clustered_lls(write_obj, umap_params, hdbscan_params, custom_saved_path, run_new_cluster)
+    f = open("../out/" + run_name + "/final_cluster_map.json", "w")
+    json.dump(result_map, f, indent=4)
+    f.close()
     
 """
 Overriding existing run outputs at run name: cluster_v1_full. Confirm: y/n
