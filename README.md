@@ -4,7 +4,11 @@
 
 Website: https://aliu917.github.io/cs224v-proj/#
 
-Video demo:
+Video demo: 
+
+https://github.com/user-attachments/assets/1b1fbcfc-f826-4272-bb49-cc8e19f7b811
+
+
 
 The website is composed of organized static pages that display the final navigation topics, high-level claims, comparison results, and African Times sources. All of the displayed results are computed from running the code using the steps below.
 Because running the full pipeline is expensive and time-consuming, and we do not expect The African Times
