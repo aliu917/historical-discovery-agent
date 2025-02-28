@@ -1,8 +1,8 @@
-# cs224v-final-proj
+# historical-discovery-agent
 
 ### Demo
 
-Website: https://aliu917.github.io/cs224v-proj/#
+Website: [https://aliu917.github.io/cs224v-proj/#](https://aliu917.github.io/historical-discovery-agent/#)
 
 Video demo: 
 
